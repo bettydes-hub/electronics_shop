@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { ShopNav } from "@/components/catalog/ShopNav";
 import { PageBack } from "@/components/ui/PageBack";
 import { formatMoney } from "@/lib/format-money";
 
@@ -12,19 +13,10 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col">
-        <nav className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <div className="flex items-center gap-1">
-              <PageBack href="/catalog" ariaLabel="Back to catalog" />
-              <Link href="/catalog" className="text-xl font-bold text-primary-600">
-                Electronics Shop
-              </Link>
-            </div>
-            <Link href="/catalog" className="rounded-lg px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
-              Catalog
-            </Link>
-          </div>
-        </nav>
+        <ShopNav current="other" />
+        <div className="mx-auto flex w-full max-w-6xl px-4 pt-4">
+          <PageBack href="/" ariaLabel="Back to home" />
+        </div>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-16 text-center">
           <h1 className="mb-4 text-2xl font-bold text-slate-900">Your cart is empty</h1>
           <p className="mb-6 text-slate-600">Add some products from our catalog.</p>
@@ -32,7 +24,7 @@ export default function CartPage() {
             href="/catalog"
             className="inline-block rounded-lg bg-primary-600 px-6 py-3 font-medium text-white hover:bg-primary-700"
           >
-            Browse Catalog
+            Browse products
           </Link>
         </main>
       </div>
@@ -41,19 +33,10 @@ export default function CartPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-1">
-            <PageBack href="/catalog" ariaLabel="Back to catalog" />
-            <Link href="/catalog" className="text-xl font-bold text-primary-600">
-              Electronics Shop
-            </Link>
-          </div>
-          <Link href="/catalog" className="rounded-lg px-4 py-2 font-medium text-slate-600 hover:bg-slate-100">
-            Catalog
-          </Link>
-        </div>
-      </nav>
+      <ShopNav current="other" />
+      <div className="mx-auto flex w-full max-w-6xl px-4 pt-4">
+        <PageBack href="/catalog" ariaLabel="Back to catalog" />
+      </div>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <div className="mb-6 flex items-center justify-between">

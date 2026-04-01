@@ -41,8 +41,8 @@ export function CustomerHub() {
       <nav className="relative z-20 border-b border-white/10 bg-black/20 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-1">
-            <PageBack href="/catalog" theme="dark" ariaLabel="Back to store" />
-            <Link href="/catalog" className="text-lg font-bold text-white">
+            <PageBack href="/" theme="dark" ariaLabel="Back to store" />
+            <Link href="/" className="text-lg font-bold text-white">
               Store
             </Link>
           </div>

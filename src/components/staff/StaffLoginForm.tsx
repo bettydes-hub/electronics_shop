@@ -72,13 +72,6 @@ export function StaffLoginForm() {
 
       <main className="mx-auto max-w-lg px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">Staff login</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Invited by email? Finish at{" "}
-          <Link href="/register" className="font-medium text-primary-600 hover:underline">
-            /register
-          </Link>{" "}
-          first.
-        </p>
 
         <div className="mt-6">
           <FirstSetupBanner variant="light" />

@@ -71,13 +71,6 @@ export function StaffNavSession({ staffElevateHref }: Props) {
         <button
           type="button"
           onClick={signOut}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
-        >
-          Sign out
-        </button>
-        <button
-          type="button"
-          onClick={signOut}
           className="text-sm font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-slate-800"
         >
           Log out

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { ShopNav } from "@/components/catalog/ShopNav";
 import { PageBack } from "@/components/ui/PageBack";
 import { formatMoney } from "@/lib/format-money";
 
@@ -74,7 +75,7 @@ function StarRatingInput({
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  const { addItem, totalItems } = useCart();
+  const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [mainIndex, setMainIndex] = useState(0);
@@ -138,11 +139,10 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   if (product === undefined) {
     return (
       <div className="flex flex-1 flex-col">
-        <nav className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center px-4 py-4">
-            <PageBack href="/catalog" ariaLabel="Back to catalog" />
-          </div>
-        </nav>
+        <ShopNav current="other" />
+        <div className="mx-auto flex w-full max-w-6xl px-4 pt-4">
+          <PageBack href="/catalog" ariaLabel="Back to catalog" />
+        </div>
         <p className="p-8 text-center text-slate-500">Loading…</p>
       </div>
     );
@@ -151,18 +151,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   if (!product) {
     return (
       <div className="flex flex-1 flex-col">
-        <nav className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center gap-1 px-4 py-4">
-            <PageBack href="/catalog" ariaLabel="Back to catalog" />
-            <Link href="/catalog" className="text-xl font-bold text-primary-600">
-              Electronics Shop
-            </Link>
-          </div>
-        </nav>
+        <ShopNav current="other" />
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-1 px-4 py-4">
+          <PageBack href="/catalog" ariaLabel="Back to catalog" />
+        </div>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 text-center">
           <p className="text-slate-600">Product not found.</p>
-          <Link href="/catalog" className="mt-4 inline-block text-primary-600 hover:underline">
-            Back to catalog
+          <Link href="/" className="mt-4 inline-block text-primary-600 hover:underline">
+            Back to home
           </Link>
         </main>
       </div>
@@ -171,29 +167,18 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   return (
     <div className="flex flex-1 flex-col">
-      <nav className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-1">
-            <PageBack href="/catalog" ariaLabel="Back to catalog" />
-            <Link href="/catalog" className="text-xl font-bold text-primary-600">
-              Electronics Shop
-            </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/cart"
-              className="relative rounded-lg px-4 py-2 font-medium text-slate-600 hover:bg-slate-100"
-            >
-              Cart
-              {totalItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <ShopNav current="other" />
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3 text-sm text-slate-600">
+        <PageBack href="/catalog" ariaLabel="Back to catalog" />
+        <span className="text-slate-400">·</span>
+        <Link href="/" className="text-primary-600 hover:underline">
+          Home
+        </Link>
+        <span className="text-slate-400">/</span>
+        <Link href="/catalog" className="text-primary-600 hover:underline">
+          Catalog
+        </Link>
+      </div>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <div className="grid gap-10 lg:grid-cols-2">

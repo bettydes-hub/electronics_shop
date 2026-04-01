@@ -1,13 +1,115 @@
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getProductImageLimits, productImageCountError } from "@/lib/product-image-limits";
 import { prisma } from "@/lib/prisma";
+import { categoryPathSlug, slugifyName } from "@/lib/slug";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const categorySlug = searchParams.get("categorySlug")?.trim();
+    const q = searchParams.get("q")?.trim();
+    const minPriceRaw = searchParams.get("minPrice");
+    const maxPriceRaw = searchParams.get("maxPrice");
+    const sort = searchParams.get("sort")?.trim() || "newest";
+    const limitRaw = searchParams.get("limit");
+    const featured = searchParams.get("featured") === "1";
+
+    const where: Prisma.ProductWhereInput = {};
+    const and: Prisma.ProductWhereInput[] = [];
+
+    if (featured) {
+      and.push({ stock: { gt: 0 } });
+    }
+
+    if (categorySlug) {
+      const norm = categorySlug.toLowerCase();
+      const categories = await prisma.category.findMany();
+      const cat = categories.find(
+        (c) => categoryPathSlug(c.name, c.slug).toLowerCase() === norm || slugifyName(c.name) === norm
+      );
+      if (!cat) {
+        return NextResponse.json([]);
+      }
+      and.push({
+        OR: [
+          { categoryId: cat.id },
+          { AND: [{ categoryId: null }, { category: cat.name }] },
+        ],
+      });
+    }
+
+    if (q) {
+      and.push({
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+          { category: { contains: q, mode: "insensitive" } },
+        ],
+      });
+    }
+
+    const priceFilter: Prisma.FloatFilter = {};
+    if (minPriceRaw != null && minPriceRaw !== "") {
+      const n = parseFloat(minPriceRaw);
+      if (!Number.isNaN(n)) priceFilter.gte = n;
+    }
+    if (maxPriceRaw != null && maxPriceRaw !== "") {
+      const n = parseFloat(maxPriceRaw);
+      if (!Number.isNaN(n)) priceFilter.lte = n;
+    }
+    if (Object.keys(priceFilter).length > 0) {
+      and.push({ price: priceFilter });
+    }
+
+    if (and.length > 0) {
+      where.AND = and;
+    }
+
+    const orderBy: Prisma.ProductOrderByWithRelationInput =
+      sort === "price-asc"
+        ? { price: "asc" }
+        : sort === "price-desc"
+          ? { price: "desc" }
+          : { createdAt: "desc" };
+
+    const limit = limitRaw != null && limitRaw !== "" ? parseInt(limitRaw, 10) : undefined;
+    const take = limit != null && !Number.isNaN(limit) && limit > 0 ? limit : undefined;
+
     const products = await prisma.product.findMany({
-      orderBy: { createdAt: "desc" },
+      where: Object.keys(where).length ? where : undefined,
+      orderBy,
+      take,
     });
-    return NextResponse.json(products);
+
+    const productIds = products.map((p) => p.id);
+    const reviewStats =
+      productIds.length > 0
+        ? await prisma.review.groupBy({
+            by: ["productId"],
+            where: { productId: { in: productIds } },
+            _avg: { rating: true },
+            _count: { _all: true },
+          })
+        : [];
+
+    const statsByProductId = new Map(
+      reviewStats.map((s) => [
+        s.productId,
+        { avgRating: s._avg.rating ?? null, reviewCount: s._count._all ?? 0 },
+      ])
+    );
+
+    const enrichedProducts = products.map((p) => {
+      const stats = statsByProductId.get(p.id);
+      return {
+        ...p,
+        avgRating: stats?.avgRating ?? null,
+        reviewCount: stats?.reviewCount ?? 0,
+      };
+    });
+
+    return NextResponse.json(enrichedProducts);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
