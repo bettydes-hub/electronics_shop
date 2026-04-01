@@ -1,6 +1,6 @@
 # Electronics Shop
 
-A complete web app for an electronics shop with three user roles: **Shop Owner**, **Seller**, and **Customer**. Built with Next.js and Cursor AI assistance.
+A web-based electronics shopping system: customers browse and order products; staff and admin manage inventory and sales. Built with Next.js (shop roles: **Shop Owner**, **Seller**, and **Customer**).
 
 ## User Roles & Features
 
