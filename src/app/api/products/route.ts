@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getProductImageLimits, productImageCountError } from "@/lib/product-image-limits";
 import { prisma } from "@/lib/prisma";
 import { categoryPathSlug, slugifyName } from "@/lib/slug";
+import { attachPricingToProductJson, loadActivePromotions } from "@/lib/effective-price";
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,7 +45,19 @@ export async function GET(request: NextRequest) {
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
+          { nameAm: { contains: q, mode: "insensitive" } },
+          { descriptionAm: { contains: q, mode: "insensitive" } },
           { category: { contains: q, mode: "insensitive" } },
+          {
+            categoryRef: {
+              is: {
+                OR: [
+                  { name: { contains: q, mode: "insensitive" } },
+                  { nameAm: { contains: q, mode: "insensitive" } },
+                ],
+              },
+            },
+          },
         ],
       });
     }
@@ -80,7 +93,14 @@ export async function GET(request: NextRequest) {
       where: Object.keys(where).length ? where : undefined,
       orderBy,
       take,
+      include: {
+        dynamicPricing: true,
+        categoryRef: { select: { id: true, name: true, nameAm: true, slug: true } },
+      },
     });
+
+    const now = new Date();
+    const promotions = await loadActivePromotions(prisma, now);
 
     const productIds = products.map((p) => p.id);
     const reviewStats =
@@ -102,8 +122,9 @@ export async function GET(request: NextRequest) {
 
     const enrichedProducts = products.map((p) => {
       const stats = statsByProductId.get(p.id);
+      const priced = attachPricingToProductJson(p, promotions, now);
       return {
-        ...p,
+        ...priced,
         avgRating: stats?.avgRating ?? null,
         reviewCount: stats?.reviewCount ?? 0,
       };
@@ -122,7 +143,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, price, costPrice, category, imageUrl, imageUrls, stock } = body;
+    const { name, description, nameAm, descriptionAm, price, costPrice, category, imageUrl, imageUrls, stock } =
+      body;
 
     if (!name || price === undefined) {
       return NextResponse.json(
@@ -165,6 +187,9 @@ export async function POST(request: NextRequest) {
       data: {
         name: String(name).trim(),
         description: description ? String(description).trim() : null,
+        nameAm: nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : null,
+        descriptionAm:
+          descriptionAm != null && String(descriptionAm).trim() ? String(descriptionAm).trim() : null,
         price: priceNum,
         costPrice: (() => {
           if (costPrice == null || costPrice === "") return null;

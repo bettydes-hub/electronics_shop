@@ -1,18 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { useShopLocale } from "@/context/LocaleContext";
 import { ShopNav } from "@/components/catalog/ShopNav";
 import { PageBack } from "@/components/ui/PageBack";
 import { formatMoney } from "@/lib/format-money";
+import { categoryDisplayName } from "@/lib/category-i18n";
+import { productDisplayDescription, productDisplayName } from "@/lib/products-i18n";
+import { categoryPathSlug } from "@/lib/slug";
 
 type Product = {
   id: string;
   name: string;
+  nameAm?: string | null;
   description: string | null;
+  descriptionAm?: string | null;
   price: number;
+  effectivePrice?: number;
+  listPrice?: number;
+  promotionLabel?: string | null;
+  isFlashSale?: boolean;
   category: string | null;
+  categoryRef?: { name: string; nameAm?: string | null; slug?: string | null } | null;
   imageUrl: string | null;
   imageUrls?: string[];
   stock: number;
@@ -75,6 +86,7 @@ function StarRatingInput({
 
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const { locale, t } = useShopLocale();
   const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -110,6 +122,33 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         : [];
   const mainImg = images[mainIndex] ?? images[0];
 
+  const unitPrice = product ? product.effectivePrice ?? product.price : 0;
+  const listPrice = product ? product.listPrice ?? product.price : 0;
+  const onSale = product != null && unitPrice < listPrice - 0.005;
+
+  const displayName = useMemo(
+    () => (product ? productDisplayName(product, locale) : ""),
+    [product, locale]
+  );
+  const displayDesc = useMemo(
+    () => (product ? productDisplayDescription(product, locale) : null),
+    [product, locale]
+  );
+
+  const categoryEnName = product?.categoryRef?.name ?? product?.category ?? null;
+  const categorySlug = product?.categoryRef?.slug ?? null;
+  const categoryHref =
+    categoryEnName?.trim() != null && categoryEnName.trim() !== ""
+      ? `/catalog/category/${encodeURIComponent(categoryPathSlug(categoryEnName.trim(), categorySlug))}`
+      : null;
+  const categoryLabel =
+    product && categoryEnName?.trim()
+      ? categoryDisplayName(
+          { name: categoryEnName.trim(), nameAm: product.categoryRef?.nameAm ?? null },
+          locale
+        )
+      : null;
+
   const avgRating =
     reviews.length > 0
       ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
@@ -129,9 +168,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       if (data.error) throw new Error(data.error);
       setReviews((prev) => [data, ...prev]);
       setReviewForm({ authorName: "", rating: 5, comment: "" });
-      setReviewMsg({ type: "ok", text: "Thanks for your review!" });
+      setReviewMsg({ type: "ok", text: t("reviewThanks") });
     } catch (err) {
-      setReviewMsg({ type: "err", text: err instanceof Error ? err.message : "Failed" });
+      setReviewMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : t("reviewFailed"),
+      });
     }
     setSubmitting(false);
   };
@@ -141,9 +183,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       <div className="flex flex-1 flex-col">
         <ShopNav current="other" />
         <div className="mx-auto flex w-full max-w-6xl px-4 pt-4">
-          <PageBack href="/catalog" ariaLabel="Back to catalog" />
+          <PageBack href="/catalog" ariaLabel={t("backToCatalog")} />
         </div>
-        <p className="p-8 text-center text-slate-500">Loading…</p>
+        <p className="p-8 text-center text-slate-500">{t("loading")}</p>
       </div>
     );
   }
@@ -153,12 +195,12 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       <div className="flex flex-1 flex-col">
         <ShopNav current="other" />
         <div className="mx-auto flex w-full max-w-6xl items-center gap-1 px-4 py-4">
-          <PageBack href="/catalog" ariaLabel="Back to catalog" />
+          <PageBack href="/catalog" ariaLabel={t("backToCatalog")} />
         </div>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 text-center">
-          <p className="text-slate-600">Product not found.</p>
+          <p className="text-slate-600">{t("productNotFound")}</p>
           <Link href="/" className="mt-4 inline-block text-primary-600 hover:underline">
-            Back to home
+            {t("backToHome")}
           </Link>
         </main>
       </div>
@@ -169,14 +211,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     <div className="flex flex-1 flex-col">
       <ShopNav current="other" />
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3 text-sm text-slate-600">
-        <PageBack href="/catalog" ariaLabel="Back to catalog" />
+        <PageBack href="/catalog" ariaLabel={t("backToCatalog")} />
         <span className="text-slate-400">·</span>
         <Link href="/" className="text-primary-600 hover:underline">
-          Home
+          {t("navHome")}
         </Link>
         <span className="text-slate-400">/</span>
         <Link href="/catalog" className="text-primary-600 hover:underline">
-          Catalog
+          {t("breadcrumbCatalog")}
         </Link>
       </div>
 
@@ -186,14 +228,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             <div className="relative aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
               {mainImg ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={mainImg} alt={product.name} className="h-full w-full object-contain" />
+                <img src={mainImg} alt={displayName} className="h-full w-full object-contain" />
               ) : (
                 <div className="flex h-full items-center justify-center text-6xl text-slate-300">—</div>
               )}
               {product.stock <= 0 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
                   <span className="rounded bg-slate-800 px-4 py-2 font-medium text-white">
-                    Out of Stock
+                    {t("outOfStock")}
                   </span>
                 </div>
               )}
@@ -218,27 +260,46 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           </div>
 
           <div>
-            {product.category && (
-              <span className="text-sm font-medium uppercase tracking-wide text-primary-600">
-                {product.category}
-              </span>
-            )}
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">{product.name}</h1>
+            {categoryHref && categoryLabel ? (
+              <Link
+                href={categoryHref}
+                className="text-sm font-medium uppercase tracking-wide text-primary-600 hover:underline"
+              >
+                {categoryLabel}
+              </Link>
+            ) : null}
+            <h1 className="mt-1 text-3xl font-bold text-slate-900">{displayName}</h1>
             {avgRating != null && (
               <p className="mt-2 text-sm text-slate-600">
                 <Stars rating={Math.round(avgRating)} />{" "}
                 <span className="text-slate-500">
-                  {avgRating.toFixed(1)} ({reviews.length} review{reviews.length !== 1 ? "s" : ""})
+                  {avgRating.toFixed(1)} ({reviews.length}{" "}
+                  {reviews.length === 1 ? t("reviewLabelSingular") : t("reviewLabelPlural")})
                 </span>
               </p>
             )}
-            <p className="mt-4 text-3xl font-bold text-primary-600">{formatMoney(product.price)}</p>
-            <p className="mt-2 text-sm text-slate-500">{product.stock} in stock</p>
+            <div className="mt-4 flex flex-wrap items-baseline gap-3">
+              <p className="text-3xl font-bold text-primary-600">{formatMoney(unitPrice)}</p>
+              {onSale ? (
+                <p className="text-xl text-slate-400 line-through">{formatMoney(listPrice)}</p>
+              ) : null}
+            </div>
+            {product.promotionLabel ? (
+              <p className="mt-1 text-sm font-medium text-amber-700">{product.promotionLabel}</p>
+            ) : null}
+            {product.isFlashSale ? (
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-600">
+                {t("flashSaleLine")}
+              </p>
+            ) : null}
+            <p className="mt-2 text-sm text-slate-500">
+              {product.stock} {t("inStock")}
+            </p>
 
             <div className="mt-6">
-              <h2 className="text-lg font-semibold text-slate-900">Description</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t("descriptionHeading")}</h2>
               <p className="mt-2 whitespace-pre-wrap text-slate-600">
-                {product.description?.trim() || "No description provided."}
+                {displayDesc?.trim() ? displayDesc.trim() : t("noDescription")}
               </p>
             </div>
 
@@ -248,23 +309,23 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               onClick={() =>
                 addItem({
                   productId: product.id,
-                  name: product.name,
-                  price: product.price,
+                  name: displayName,
+                  price: unitPrice,
                   imageUrl: images[0] ?? null,
                 })
               }
               className="mt-8 w-full rounded-xl bg-primary-600 py-3 text-lg font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-12"
             >
-              Add to Cart
+              {t("addToCart")}
             </button>
           </div>
         </div>
 
         <section className="mt-16 border-t border-slate-200 pt-12">
-          <h2 className="text-2xl font-bold text-slate-900">Reviews</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{t("reviewsHeading")}</h2>
 
           <form onSubmit={handleReviewSubmit} className="mt-6 max-w-xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="font-semibold text-slate-900">Write a review</h3>
+            <h3 className="font-semibold text-slate-900">{t("writeReview")}</h3>
             <div className="mt-4 space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">Your name (optional)</label>
@@ -304,13 +365,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               disabled={submitting}
               className="mt-4 rounded-lg bg-slate-800 px-4 py-2 font-medium text-white hover:bg-slate-900 disabled:opacity-50"
             >
-              {submitting ? "Submitting…" : "Submit review"}
+              {submitting ? t("reviewSubmitting") : t("reviewSubmit")}
             </button>
           </form>
 
           <ul className="mt-10 space-y-6">
             {reviews.length === 0 ? (
-              <p className="text-slate-500">No reviews yet. Be the first!</p>
+              <p className="text-slate-500">{t("reviewNoYet")}</p>
             ) : (
               reviews.map((r) => (
                 <li key={r.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

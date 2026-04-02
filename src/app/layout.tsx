@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { CartProvider } from "@/context/CartContext";
+import { AppProviders } from "@/components/providers/AppProviders";
 
 export const metadata: Metadata = {
   title: "Electronics Shop",
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <CartProvider>{children}</CartProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

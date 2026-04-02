@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, slug } = body;
+    const { name, nameAm, slug } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     const category = await prisma.category.create({
       data: {
         name: name.trim(),
+        nameAm: nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : null,
         slug: slug || name.trim().toLowerCase().replace(/\s+/g, "-"),
       },
     });

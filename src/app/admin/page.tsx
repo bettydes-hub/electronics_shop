@@ -18,6 +18,8 @@ type Product = {
   id: string;
   name: string;
   description: string | null;
+  nameAm: string | null;
+  descriptionAm: string | null;
   price: number;
   costPrice: number | null;
   category: string | null;
@@ -30,6 +32,7 @@ type Product = {
 type Category = {
   id: string;
   name: string;
+  nameAm: string | null;
   slug: string | null;
   _count?: { products: number };
 };
@@ -87,6 +90,8 @@ export default function AdminPage() {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    nameAm: "",
+    descriptionAm: "",
     price: "",
     costPrice: "",
     category: "",
@@ -94,9 +99,9 @@ export default function AdminPage() {
     imageUrls: [] as string[],
     stock: "",
   });
-  const [catForm, setCatForm] = useState({ name: "", slug: "" });
+  const [catForm, setCatForm] = useState({ name: "", nameAm: "", slug: "" });
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [categoryEditForm, setCategoryEditForm] = useState({ name: "", slug: "" });
+  const [categoryEditForm, setCategoryEditForm] = useState({ name: "", nameAm: "", slug: "" });
   const [recategorizeCategory, setRecategorizeCategory] = useState<Category | null>(null);
   const [productNewCategory, setProductNewCategory] = useState<Record<string, string>>({});
   const [storeForm, setStoreForm] = useState({
@@ -307,6 +312,8 @@ export default function AdminPage() {
     const payload: Record<string, unknown> = {
       name: form.name,
       description: form.description || null,
+      nameAm: form.nameAm.trim() || null,
+      descriptionAm: form.descriptionAm.trim() || null,
       price: parseFloat(form.price) || 0,
       costPrice: form.costPrice ? parseFloat(form.costPrice) : null,
       category: categoryValue,
@@ -333,7 +340,18 @@ export default function AdminPage() {
         if (data.error) throw new Error(data.error);
         showMsg("products", "success", "Product created");
       }
-      setForm({ name: "", description: "", price: "", costPrice: "", category: "", categoryId: "", imageUrls: [], stock: "" });
+      setForm({
+        name: "",
+        description: "",
+        nameAm: "",
+        descriptionAm: "",
+        price: "",
+        costPrice: "",
+        category: "",
+        categoryId: "",
+        imageUrls: [],
+        stock: "",
+      });
       setShowForm(false);
       setEditingId(null);
       fetchAll();
@@ -348,12 +366,16 @@ export default function AdminPage() {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...adminHeaders() },
-        body: JSON.stringify({ name: catForm.name.trim(), slug: catForm.slug.trim() || undefined }),
+        body: JSON.stringify({
+          name: catForm.name.trim(),
+          nameAm: catForm.nameAm.trim() || null,
+          slug: catForm.slug.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       showMsg("categories", "success", "Category created");
-      setCatForm({ name: "", slug: "" });
+      setCatForm({ name: "", nameAm: "", slug: "" });
       fetchAll();
     } catch (err) {
       showMsg("categories", "error", err instanceof Error ? err.message : "Failed to create category");
@@ -502,6 +524,8 @@ export default function AdminPage() {
     setForm({
       name: p.name,
       description: p.description || "",
+      nameAm: p.nameAm || "",
+      descriptionAm: p.descriptionAm || "",
       price: String(p.price),
       costPrice: p.costPrice != null ? String(p.costPrice) : "",
       category: matchingCat ? "" : p.category || "",
@@ -545,7 +569,7 @@ export default function AdminPage() {
 
   const handleRenameCategory = (c: Category) => {
     setEditingCategoryId(c.id);
-    setCategoryEditForm({ name: c.name, slug: c.slug || "" });
+    setCategoryEditForm({ name: c.name, nameAm: c.nameAm || "", slug: c.slug || "" });
   };
 
   const handleCategoryUpdateSubmit = async (e: React.FormEvent) => {
@@ -601,7 +625,18 @@ export default function AdminPage() {
   };
 
   const resetProductForm = () => {
-    setForm({ name: "", description: "", price: "", costPrice: "", category: "", categoryId: "", imageUrls: [], stock: "" });
+    setForm({
+      name: "",
+      description: "",
+      nameAm: "",
+      descriptionAm: "",
+      price: "",
+      costPrice: "",
+      category: "",
+      categoryId: "",
+      imageUrls: [],
+      stock: "",
+    });
     setShowForm(false);
     setEditingId(null);
   };
@@ -662,13 +697,23 @@ export default function AdminPage() {
                     <h3 className="mb-4 font-semibold">{editingId ? "Edit" : "Add"} Product</h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-sm font-medium">Name *</label>
+                        <label className="mb-1 block text-sm font-medium">Name (English) *</label>
                         <input
                           type="text"
                           required
                           value={form.name}
                           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">Name (አማርኛ)</label>
+                        <input
+                          type="text"
+                          value={form.nameAm}
+                          onChange={(e) => setForm((f) => ({ ...f, nameAm: e.target.value }))}
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                          placeholder="Optional — storefront falls back to English"
                         />
                       </div>
                       <div>
@@ -683,12 +728,22 @@ export default function AdminPage() {
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-sm font-medium">Description</label>
+                        <label className="mb-1 block text-sm font-medium">Description (English)</label>
                         <textarea
                           value={form.description}
                           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                           rows={2}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="mb-1 block text-sm font-medium">Description (አማርኛ)</label>
+                        <textarea
+                          value={form.descriptionAm}
+                          onChange={(e) => setForm((f) => ({ ...f, descriptionAm: e.target.value }))}
+                          rows={2}
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                          placeholder="Optional — storefront falls back to English"
                         />
                       </div>
                       <div>
@@ -805,13 +860,23 @@ export default function AdminPage() {
                   <h3 className="mb-4 font-semibold">Add Category</h3>
                   <div className="flex flex-wrap gap-4">
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Name</label>
+                      <label className="mb-1 block text-sm font-medium">Name (English) *</label>
                       <input
                         type="text"
                         required
                         value={catForm.name}
                         onChange={(e) => setCatForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder="e.g. Phones"
+                        className="rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Name (አማርኛ)</label>
+                      <input
+                        type="text"
+                        value={catForm.nameAm}
+                        onChange={(e) => setCatForm((f) => ({ ...f, nameAm: e.target.value }))}
+                        placeholder="Optional — URL stays English-based"
                         className="rounded-lg border border-slate-300 px-3 py-2"
                       />
                     </div>
@@ -884,12 +949,23 @@ export default function AdminPage() {
                             {isEditing ? (
                               <form onSubmit={handleCategoryUpdateSubmit} className="flex flex-wrap items-end gap-4">
                                 <div>
-                                  <label className="mb-1 block text-sm font-medium">Name</label>
+                                  <label className="mb-1 block text-sm font-medium">Name (English) *</label>
                                   <input
                                     type="text"
                                     required
                                     value={categoryEditForm.name}
                                     onChange={(e) => setCategoryEditForm((f) => ({ ...f, name: e.target.value }))}
+                                    className="rounded-lg border border-slate-300 px-3 py-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="mb-1 block text-sm font-medium">Name (አማርኛ)</label>
+                                  <input
+                                    type="text"
+                                    value={categoryEditForm.nameAm}
+                                    onChange={(e) =>
+                                      setCategoryEditForm((f) => ({ ...f, nameAm: e.target.value }))
+                                    }
                                     className="rounded-lg border border-slate-300 px-3 py-2"
                                   />
                                 </div>
@@ -913,6 +989,9 @@ export default function AdminPage() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="font-medium">{c.name}</p>
+                                  {c.nameAm ? (
+                                    <p className="text-sm text-slate-600">{c.nameAm}</p>
+                                  ) : null}
                                   <p className="text-sm text-slate-500">{c.slug || "—"} • {prodCount} products</p>
                                 </div>
                                 <div className="flex gap-2">

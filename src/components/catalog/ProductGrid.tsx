@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useShopLocale } from "@/context/LocaleContext";
 import { CatalogProduct, ProductCard } from "@/components/catalog/ProductCard";
 
 function buildProductsUrl(opts: {
@@ -27,16 +28,18 @@ type ProductGridProps = {
 };
 
 export function ProductGrid({
-  title = "Products",
+  title,
   className = "",
   showSearch = true,
   categorySlug = null,
 }: ProductGridProps) {
+  const { t } = useShopLocale();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const { addItem } = useCart();
+  const heading = title ?? t("productCatalog");
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search), 300);
@@ -69,27 +72,27 @@ export function ProductGrid({
 
   const emptyMessage = useMemo(() => {
     if (debouncedSearch.trim()) {
-      return "No products match your search.";
+      return t("noProductsSearch");
     }
-    return categorySlug ? "No products in this category yet." : "No products yet. Check back soon!";
-  }, [debouncedSearch, categorySlug]);
+    return categorySlug ? t("noProductsCategory") : t("noProductsYet");
+  }, [debouncedSearch, categorySlug, t]);
 
   return (
     <section className={className}>
       <div className="mb-6 flex flex-col gap-4">
-        <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+        <h2 className="text-2xl font-bold text-slate-900">{heading}</h2>
 
         {showSearch && (
           <div className="flex flex-col gap-2 sm:max-w-xl">
             <label htmlFor="product-search" className="text-sm font-medium text-slate-600">
-              Search
+              {t("productSearchLabel")}
             </label>
             <input
               id="product-search"
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Product name, description, or category…"
+              placeholder={t("productSearchPlaceholder")}
               autoComplete="off"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             />
@@ -115,7 +118,7 @@ export function ProductGrid({
               }}
               className="mt-3 text-sm font-medium text-primary-600 hover:underline"
             >
-              Clear search
+              {t("clearSearch")}
             </button>
           )}
         </div>
@@ -136,6 +139,7 @@ type FeaturedProductsProps = { className?: string };
 
 /** Homepage strip: in-stock newest items, limited count */
 export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
+  const { t } = useShopLocale();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
@@ -172,7 +176,7 @@ export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
   if (products.length === 0) {
     return (
       <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-        No featured products yet. Add stock in the admin catalog.
+        {t("noFeaturedProducts")}
       </p>
     );
   }

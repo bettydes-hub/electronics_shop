@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useShopLocale } from "@/context/LocaleContext";
 
 type Variant = "light" | "dark";
 
@@ -14,6 +15,7 @@ type Props = {
  * Shows when the DB has zero users — typical right after deploy. Points admins to /setup.
  */
 export function FirstSetupBanner({ variant = "light", className = "" }: Props) {
+  const { t } = useShopLocale();
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function FirstSetupBanner({ variant = "light", className = "" }: Props) {
       } ${className}`}
     >
       <p className={`font-medium ${isDark ? "text-amber-100" : "text-primary-900"}`}>
-        No admin account yet — create one first.
+        {t("firstSetupNoAdmin")}
       </p>
       <p className="mt-3">
         <Link
@@ -56,7 +58,7 @@ export function FirstSetupBanner({ variant = "light", className = "" }: Props) {
               : "bg-primary-600 text-white hover:bg-primary-700"
           }`}
         >
-          Setup →
+          {t("firstSetupCta")}
         </Link>
       </p>
     </div>

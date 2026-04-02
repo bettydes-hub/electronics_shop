@@ -35,12 +35,15 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, slug } = body;
+    const { name, nameAm, slug } = body;
 
     const category = await prisma.category.update({
       where: { id },
       data: {
         ...(name !== undefined && { name }),
+        ...(nameAm !== undefined && {
+          nameAm: nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : null,
+        }),
         ...(slug !== undefined && { slug }),
       },
     });

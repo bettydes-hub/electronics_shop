@@ -11,6 +11,7 @@ import {
   DEFAULT_PRODUCT_IMAGE_MAX,
   DEFAULT_PRODUCT_IMAGE_MIN,
 } from "@/lib/product-image-policy";
+import { OwnerOffersPanel } from "@/components/owner/OwnerOffersPanel";
 import type { SalesPeriodFilter } from "@/lib/sales-period";
 
 type Dashboard = {
@@ -70,6 +71,8 @@ type OwnerProduct = {
   id: string;
   name: string;
   description: string | null;
+  nameAm: string | null;
+  descriptionAm: string | null;
   price: number;
   costPrice: number | null;
   category: string | null;
@@ -82,6 +85,7 @@ type OwnerProduct = {
 type Category = {
   id: string;
   name: string;
+  nameAm: string | null;
   slug: string | null;
 };
 
@@ -177,7 +181,7 @@ export default function OwnerPage() {
   const [salesLoading, setSalesLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "products" | "purchases" | "expenses" | "sales"
+    "overview" | "products" | "offers" | "purchases" | "expenses" | "sales"
   >("overview");
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -188,6 +192,8 @@ export default function OwnerPage() {
   const [productForm, setProductForm] = useState({
     name: "",
     description: "",
+    nameAm: "",
+    descriptionAm: "",
     price: "",
     costPrice: "",
     categoryId: "",
@@ -198,7 +204,7 @@ export default function OwnerPage() {
   const [productMsg, setProductMsg] = useState<{ type: "success" | "error"; text: string } | null>(
     null
   );
-  const [ownerCatForm, setOwnerCatForm] = useState({ name: "", slug: "" });
+  const [ownerCatForm, setOwnerCatForm] = useState({ name: "", nameAm: "", slug: "" });
   const [categoryMsg, setCategoryMsg] = useState<{ type: "success" | "error"; text: string } | null>(
     null
   );
@@ -252,8 +258,27 @@ export default function OwnerPage() {
         year: perData.year,
       });
     }
-    setPurchases(await purRes.json());
-    setExpenses(await eRes.json());
+    // API routes return either an array on success or `{ error: ... }` on failure.
+    // Guard to ensure we never call `.map()` on a non-array.
+    const purData = await purRes.json();
+    if (Array.isArray(purData)) {
+      setPurchases(purData);
+    } else {
+      if (purData && typeof purData === "object" && "error" in purData) {
+        console.error("Failed to load purchases:", (purData as any).error);
+      }
+      setPurchases([]);
+    }
+
+    const expData = await eRes.json();
+    if (Array.isArray(expData)) {
+      setExpenses(expData);
+    } else {
+      if (expData && typeof expData === "object" && "error" in expData) {
+        console.error("Failed to load expenses:", (expData as any).error);
+      }
+      setExpenses([]);
+    }
     const prods = await prodRes.json();
     setAllProducts(Array.isArray(prods) ? prods : []);
     const cats = await catRes.json();
@@ -299,13 +324,14 @@ export default function OwnerPage() {
         headers: { "Content-Type": "application/json", ...ownerStaffHeaders() },
         body: JSON.stringify({
           name: ownerCatForm.name.trim(),
+          nameAm: ownerCatForm.nameAm.trim() || null,
           slug: ownerCatForm.slug.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed");
       showCategoryToast("success", "Category added");
-      setOwnerCatForm({ name: "", slug: "" });
+      setOwnerCatForm({ name: "", nameAm: "", slug: "" });
       fetchAll();
     } catch (err) {
       showCategoryToast("error", err instanceof Error ? err.message : "Failed to create category");
@@ -412,6 +438,8 @@ export default function OwnerPage() {
     setProductForm({
       name: "",
       description: "",
+      nameAm: "",
+      descriptionAm: "",
       price: "",
       costPrice: "",
       categoryId: "",
@@ -438,6 +466,8 @@ export default function OwnerPage() {
     const payload: Record<string, unknown> = {
       name: productForm.name,
       description: productForm.description || null,
+      nameAm: productForm.nameAm.trim() || null,
+      descriptionAm: productForm.descriptionAm.trim() || null,
       price: parseFloat(productForm.price) || 0,
       costPrice: productForm.costPrice ? parseFloat(productForm.costPrice) : null,
       category: categoryValue,
@@ -478,6 +508,8 @@ export default function OwnerPage() {
     setProductForm({
       name: p.name,
       description: p.description || "",
+      nameAm: p.nameAm || "",
+      descriptionAm: p.descriptionAm || "",
       price: String(p.price),
       costPrice: p.costPrice != null ? String(p.costPrice) : "",
       categoryId: matchingCat?.id || p.categoryId || "",
@@ -594,6 +626,12 @@ export default function OwnerPage() {
             className={`px-4 py-2 font-medium ${activeTab === "products" ? "border-b-2 border-primary-600 text-primary-600" : "text-slate-600 hover:text-slate-900"}`}
           >
             Products
+          </button>
+          <button
+            onClick={() => setActiveTab("offers")}
+            className={`px-4 py-2 font-medium ${activeTab === "offers" ? "border-b-2 border-primary-600 text-primary-600" : "text-slate-600 hover:text-slate-900"}`}
+          >
+            Offers &amp; pricing
           </button>
           <button
             onClick={() => setActiveTab("purchases")}
@@ -713,13 +751,23 @@ export default function OwnerPage() {
                   </p>
                   <div className="flex flex-wrap gap-4">
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Name</label>
+                      <label className="mb-1 block text-sm font-medium">Name (English) *</label>
                       <input
                         type="text"
                         required
                         value={ownerCatForm.name}
                         onChange={(e) => setOwnerCatForm((f) => ({ ...f, name: e.target.value }))}
                         placeholder="e.g. Phones"
+                        className="rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Name (አማርኛ)</label>
+                      <input
+                        type="text"
+                        value={ownerCatForm.nameAm}
+                        onChange={(e) => setOwnerCatForm((f) => ({ ...f, nameAm: e.target.value }))}
+                        placeholder="Optional"
                         className="rounded-lg border border-slate-300 px-3 py-2"
                       />
                     </div>
@@ -774,13 +822,23 @@ export default function OwnerPage() {
                     <h3 className="mb-4 font-semibold">{editingProductId ? "Edit" : "Add"} Product</h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-sm font-medium">Name *</label>
+                        <label className="mb-1 block text-sm font-medium">Name (English) *</label>
                         <input
                           type="text"
                           required
                           value={productForm.name}
                           onChange={(e) => setProductForm((f) => ({ ...f, name: e.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium">Name (አማርኛ)</label>
+                        <input
+                          type="text"
+                          value={productForm.nameAm}
+                          onChange={(e) => setProductForm((f) => ({ ...f, nameAm: e.target.value }))}
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                          placeholder="Optional — storefront falls back to English"
                         />
                       </div>
                       <div>
@@ -803,7 +861,7 @@ export default function OwnerPage() {
                         </p>
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-sm font-medium">Description</label>
+                        <label className="mb-1 block text-sm font-medium">Description (English)</label>
                         <textarea
                           value={productForm.description}
                           onChange={(e) =>
@@ -811,6 +869,18 @@ export default function OwnerPage() {
                           }
                           rows={2}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="mb-1 block text-sm font-medium">Description (አማርኛ)</label>
+                        <textarea
+                          value={productForm.descriptionAm}
+                          onChange={(e) =>
+                            setProductForm((f) => ({ ...f, descriptionAm: e.target.value }))
+                          }
+                          rows={2}
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                          placeholder="Optional — storefront falls back to English"
                         />
                       </div>
                       <div>
@@ -963,6 +1033,13 @@ export default function OwnerPage() {
                   )}
                 </div>
               </div>
+            )}
+
+            {activeTab === "offers" && (
+              <OwnerOffersPanel
+                categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+                products={allProducts.map((p) => ({ id: p.id, name: p.name }))}
+              />
             )}
 
             {activeTab === "purchases" && (

@@ -9,7 +9,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: { 50: "#eff6ff", 500: "#3b82f6", 600: "#2563eb", 700: "#1d4ed8" },
+        primary: {
+          50: "#ecfdf5",
+          300: "#6ee7b7",
+          400: "#34d399",
+          500: "#10b981",
+          600: "#059669",
+          700: "#047857",
+        },
       },
       keyframes: {
         "landing-blob": {

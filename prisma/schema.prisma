@@ -54,18 +54,27 @@ model StaffInviteCode {
   @@index([userId])
 }
 
+enum PromotionScope {
+  PRODUCT
+  CATEGORY
+}
+
 model Category {
   id        String    @id @default(cuid())
-  name      String    @unique
+  name      String    @unique // English (primary); URLs and product links use this + slug
+  nameAm    String?   // አማርኛ — optional; storefront falls back to English
   slug      String?   // e.g. "phones" for URL
   createdAt DateTime  @default(now())
   products  Product[]
+  promotions Promotion[]
 }
 
 model Product {
   id          String   @id @default(cuid())
-  name        String
-  description String?
+  name        String   // English (primary)
+  description String?  // English (primary)
+  nameAm      String?  // አማርኛ — optional; falls back to English in storefront
+  descriptionAm String?
   price       Float
   costPrice   Float?   // For profit calculation
   category    String?  // Legacy - keep for backwards compat
@@ -80,6 +89,8 @@ model Product {
   sales       Sale[]
   orderItems  OrderItem[]
   reviews     Review[]
+  promotions  Promotion[]
+  dynamicPricing DynamicPricingRule?
 }
 
 model Review {
@@ -126,17 +137,75 @@ model Sale {
   createdAt  DateTime @default(now())
 }
 
+model Promotion {
+  id          String          @id @default(cuid())
+  name        String
+  scope       PromotionScope
+  productId   String?
+  product     Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  categoryRef Category?       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  percentOff  Float           // 1–100
+  startsAt    DateTime
+  endsAt      DateTime
+  isFlashSale Boolean         @default(false) // short window / highlight in admin
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([active, startsAt, endsAt])
+  @@index([productId])
+  @@index([categoryId])
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  percentOff    Float?
+  fixedOff      Float?
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  minOrderTotal Float?    @default(0)
+  startsAt      DateTime?
+  endsAt      DateTime?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+}
+
+/// Demand-based adjustments on top of list price (before %-off promotions).
+model DynamicPricingRule {
+  id                       String   @id @default(cuid())
+  productId                String   @unique
+  product                  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  enabled                  Boolean  @default(false)
+  lowStockThreshold        Int      @default(5)
+  lowStockMarkupPercent    Float    @default(0)
+  highStockThreshold       Int      @default(100)
+  highStockDiscountPercent Float    @default(0)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
 // Customer orders (reduces stock, delivery + payment)
 model Order {
   id             String      @id @default(cuid())
   customerPhone  String
   customerName   String?
   deliveryAddress String?
+  subtotal       Float       @default(0) // lines before coupon
+  discountTotal  Float       @default(0) // coupon discount
   total          Float
+  couponId       String?
+  coupon         Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponCodeSnapshot String? // code text at checkout
   status         String     @default("PENDING") // PENDING, PAID, DELIVERED
   paymentMethod  String?    // e.g. cash, mobile_money
   createdAt      DateTime   @default(now())
   items          OrderItem[]
+
+  @@index([couponId])
 }
 
 model OrderItem {

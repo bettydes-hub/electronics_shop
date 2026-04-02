@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useShopLocale } from "@/context/LocaleContext";
 import { getShopContact, phoneToTelHref, type ShopContact } from "@/lib/shop-contact";
 
 function IconTikTok({ className }: { className?: string }) {
@@ -29,6 +30,7 @@ function IconTelegram({ className }: { className?: string }) {
 }
 
 export function ShopCustomerFooter() {
+  const { t } = useShopLocale();
   const [c, setC] = useState<ShopContact>(() => getShopContact());
 
   useEffect(() => {
@@ -58,13 +60,13 @@ export function ShopCustomerFooter() {
   const addressLines = c.address.split("\n").filter(Boolean);
 
   return (
-    <footer className="relative z-20 mt-auto border-t border-white/15 bg-slate-950/80 backdrop-blur-md">
+    <footer className="relative z-20 mt-auto border-t border-primary-600/70 bg-primary-700 backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-fuchsia-300/90">Visit us</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-100">{t("footerVisitUs")}</h3>
             <p className="mt-3 font-semibold text-white">{c.storeName}</p>
-            <address className="mt-2 not-italic text-sm leading-relaxed text-slate-300">
+            <address className="mt-2 not-italic text-sm leading-relaxed text-emerald-50/90">
               {addressLines.length > 0 ? (
                 addressLines.map((line, i) => (
                   <span key={i} className="block">
@@ -72,32 +74,30 @@ export function ShopCustomerFooter() {
                   </span>
                 ))
               ) : (
-                <span className="block text-slate-500">Address can be set in Admin → Store &amp; footer.</span>
+                <span className="block text-emerald-200/70">{t("footerAddressPlaceholder")}</span>
               )}
             </address>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-fuchsia-300/90">Contact</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-100">{t("footerContact")}</h3>
             {c.phone ? (
               <p className="mt-3">
-                <span className="text-slate-400">Phone: </span>
+                <span className="text-emerald-100/70">{t("footerPhone")} </span>
                 <a
                   href={phoneToTelHref(c.phone)}
-                  className="font-medium text-white underline-offset-2 transition hover:text-fuchsia-200 hover:underline"
+                  className="font-medium text-white underline-offset-2 transition hover:text-emerald-100 hover:underline"
                 >
                   {c.phone}
                 </a>
               </p>
             ) : (
-              <p className="mt-3 text-sm text-slate-500">
-                Phone not set — add it in Admin → Store &amp; footer (or NEXT_PUBLIC_SHOP_PHONE in .env).
-              </p>
+              <p className="mt-3 text-sm text-emerald-200/70">{t("footerPhonePlaceholder")}</p>
             )}
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-fuchsia-300/90">Social</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-100">{t("footerSocial")}</h3>
             <ul className="mt-3 flex flex-wrap gap-3">
               {c.tiktokUrl ? (
                 <li>
@@ -105,7 +105,7 @@ export function ShopCustomerFooter() {
                     href={c.tiktokUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white transition hover:border-fuchsia-400/50 hover:bg-white/10"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:border-emerald-200 hover:bg-white/20"
                     aria-label="TikTok"
                   >
                     <IconTikTok className="h-5 w-5" />
@@ -118,7 +118,7 @@ export function ShopCustomerFooter() {
                     href={c.instagramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white transition hover:border-fuchsia-400/50 hover:bg-white/10"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:border-emerald-200 hover:bg-white/20"
                     aria-label="Instagram"
                   >
                     <IconInstagram className="h-5 w-5" />
@@ -131,7 +131,7 @@ export function ShopCustomerFooter() {
                     href={c.telegramUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white transition hover:border-fuchsia-400/50 hover:bg-white/10"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:border-emerald-200 hover:bg-white/20"
                     aria-label="Telegram"
                   >
                     <IconTelegram className="h-5 w-5" />
@@ -139,14 +139,12 @@ export function ShopCustomerFooter() {
                 </li>
               ) : null}
               {!c.tiktokUrl && !c.instagramUrl && !c.telegramUrl ? (
-                <li className="text-sm text-slate-500">
-                  Social links can be set in Admin → Store &amp; footer (or NEXT_PUBLIC_SHOP_*_URL in .env).
-                </li>
+                <li className="text-sm text-emerald-200/70">{t("footerSocialPlaceholder")}</li>
               ) : null}
             </ul>
           </div>
         </div>
-        <p className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-slate-500">
+        <p className="mt-10 border-t border-primary-600/70 pt-6 text-center text-xs text-emerald-100/80">
           © {new Date().getFullYear()} {c.storeName}
         </p>
       </div>
