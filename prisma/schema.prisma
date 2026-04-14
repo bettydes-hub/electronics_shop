@@ -140,6 +140,7 @@ model Sale {
 model Promotion {
   id          String          @id @default(cuid())
   name        String
+  nameAm      String?         // አማርኛ — optional; falls back to English in storefront
   scope       PromotionScope
   productId   String?
   product     Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)

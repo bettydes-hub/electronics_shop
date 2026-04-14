@@ -5,6 +5,9 @@ import { AppProviders } from "@/components/providers/AppProviders";
 export const metadata: Metadata = {
   title: "Electronics Shop",
   description: "Browse our electronics products",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

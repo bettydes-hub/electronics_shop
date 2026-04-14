@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireOwner } from "@/lib/require-staff";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const gate = await requireOwner(request);
+  if (gate.response) return gate.response;
   try {
     const { id: orderId } = await params;
     const order = await prisma.order.findUnique({

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicOrigin } from "@/lib/public-origin";
 import { requestPasswordReset } from "@/lib/password-reset";
+import { rateLimitExceeded } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  if (await rateLimitExceeded(request, "auth-forgot-password", 10, 3_600_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
+  }
   let body: unknown;
   try {
     body = await request.json();

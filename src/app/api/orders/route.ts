@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { applyCouponToSubtotal, priceOrderLines } from "@/lib/order-pricing";
+import { priceOrderLines } from "@/lib/order-pricing";
+import { requireOwner } from "@/lib/require-staff";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireOwner(request);
+  if (gate.response) return gate.response;
   try {
     const orders = await prisma.order.findMany({
       include: { items: { include: { product: true } } },
@@ -27,7 +30,6 @@ export async function POST(request: NextRequest) {
       deliveryAddress,
       paymentMethod,
       items,
-      couponCode,
     } = body;
 
     if (!customerPhone || !items?.length) {
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
       }
       merged.set(pid, (merged.get(pid) || 0) + q);
     }
-    const lineInputs = [...merged.entries()].map(([productId, quantity]) => ({
+    const lineInputs = Array.from(merged.entries()).map(([productId, quantity]) => ({
       productId,
       quantity,
     }));
@@ -69,12 +71,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const couponResult = await applyCouponToSubtotal(priced.subtotal, couponCode);
-    if (!couponResult.ok) {
-      return NextResponse.json({ error: couponResult.error }, { status: 400 });
-    }
-
-    const discountTotal = couponResult.discount;
+    const discountTotal = 0;
     const total = Math.round((priced.subtotal - discountTotal) * 100) / 100;
     if (total < 0) {
       return NextResponse.json({ error: "Invalid total" }, { status: 400 });
@@ -103,20 +100,14 @@ export async function POST(request: NextRequest) {
           subtotal: priced.subtotal,
           discountTotal,
           total,
-          couponId: couponResult.coupon?.id ?? null,
-          couponCodeSnapshot: couponResult.codeSnapshot,
+          couponId: null,
+          couponCodeSnapshot: null,
           paymentMethod: paymentMethod || null,
           status: "PENDING",
           items: { create: orderItems },
         },
         include: { items: { include: { product: true } } },
       });
-      if (couponResult.coupon && discountTotal > 0) {
-        await tx.coupon.update({
-          where: { id: couponResult.coupon.id },
-          data: { usedCount: { increment: 1 } },
-        });
-      }
       for (const productId of Object.keys(stockUpdates)) {
         const qty = stockUpdates[productId];
         await tx.product.update({

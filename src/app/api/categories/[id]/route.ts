@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const gate = await requireAdmin(request);
+  if (gate.response) return gate.response;
   try {
     const { id } = await params;
     const category = await prisma.category.findUnique({
@@ -30,7 +32,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireAdmin(request);
-  if (!gate.user) return gate.response;
+  if (gate.response) return gate.response;
 
   try {
     const { id } = await params;
@@ -63,7 +65,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireAdmin(request);
-  if (!gate.user) return gate.response;
+  if (gate.response) return gate.response;
 
   try {
     const { id } = await params;

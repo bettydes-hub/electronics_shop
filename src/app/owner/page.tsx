@@ -89,10 +89,11 @@ type Category = {
   slug: string | null;
 };
 
-function ownerStaffHeaders(): Record<string, string> {
-  const { id } = readStaffSession();
-  return id ? { "x-user-id": id } : {};
-}
+const staffCred: RequestInit = { credentials: "include" };
+const staffJson: RequestInit = {
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+};
 
 const PERIOD_LABELS: Record<string, string> = {
   WEEKLY: "Week",
@@ -234,13 +235,13 @@ export default function OwnerPage() {
 
   const fetchAll = async () => {
     const [dRes, perRes, purRes, eRes, prodRes, catRes, settingsRes] = await Promise.all([
-      fetch("/api/dashboard"),
-      fetch("/api/dashboard/periods"),
-      fetch("/api/purchases"),
-      fetch("/api/expenses"),
-      fetch("/api/products"),
-      fetch("/api/categories"),
-      fetch("/api/shop-settings"),
+      fetch("/api/dashboard", staffCred),
+      fetch("/api/dashboard/periods", staffCred),
+      fetch("/api/purchases", staffCred),
+      fetch("/api/expenses", staffCred),
+      fetch("/api/products", staffCred),
+      fetch("/api/categories", staffCred),
+      fetch("/api/shop-settings", staffCred),
     ]);
     setDashboard(await dRes.json());
     const perData = await perRes.json();
@@ -320,8 +321,8 @@ export default function OwnerPage() {
     }
     try {
       const res = await fetch("/api/categories", {
+        ...staffJson,
         method: "POST",
-        headers: { "Content-Type": "application/json", ...ownerStaffHeaders() },
         body: JSON.stringify({
           name: ownerCatForm.name.trim(),
           nameAm: ownerCatForm.nameAm.trim() || null,
@@ -477,8 +478,8 @@ export default function OwnerPage() {
     try {
       if (editingProductId) {
         const res = await fetch(`/api/products/${editingProductId}`, {
+          ...staffJson,
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -486,8 +487,8 @@ export default function OwnerPage() {
         showProductToast("success", "Product updated");
       } else {
         const res = await fetch("/api/products", {
+          ...staffJson,
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -523,7 +524,7 @@ export default function OwnerPage() {
   const handleDeleteOwnerProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
-      await fetch(`/api/products/${id}`, { method: "DELETE" });
+      await fetch(`/api/products/${id}`, { ...staffCred, method: "DELETE" });
       showProductToast("success", "Product deleted");
       fetchAll();
     } catch {
@@ -542,7 +543,7 @@ export default function OwnerPage() {
     (async () => {
       setSalesLoading(true);
       try {
-        const r = await fetch(`/api/sales?period=${encodeURIComponent(salesPeriod)}`);
+        const r = await fetch(`/api/sales?period=${encodeURIComponent(salesPeriod)}`, staffCred);
         const data = await r.json();
         if (!cancelled) {
           setFloorSales(Array.isArray(data) ? data : []);
@@ -561,8 +562,8 @@ export default function OwnerPage() {
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch("/api/purchases", {
+      ...staffJson,
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         productId: purchaseForm.productId,
         quantity: purchaseForm.quantity,
@@ -581,8 +582,8 @@ export default function OwnerPage() {
   const handleExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch("/api/expenses", {
+      ...staffJson,
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         description: expenseForm.description,
         amount: expenseForm.amount,
@@ -726,13 +727,6 @@ export default function OwnerPage() {
                   <p className="mt-1 text-sm text-slate-700">
                     Floor sales (seller): {formatMoney(dashboard.salesTotal)}
                   </p>
-                  <p className="mt-2 text-xs text-slate-500">
-                    Recorded in{" "}
-                    <Link href="/seller" className="font-medium text-primary-600 hover:underline">
-                      Seller
-                    </Link>
-                    .
-                  </p>
                 </div>
                   </div>
                 </div>
@@ -746,9 +740,6 @@ export default function OwnerPage() {
                   className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
                 >
                   <h3 className="mb-4 font-semibold">Add category</h3>
-                  <p className="mb-4 text-sm text-slate-600">
-                    New categories appear in the dropdown below when adding or editing products.
-                  </p>
                   <div className="flex flex-wrap gap-4">
                     <div>
                       <label className="mb-1 block text-sm font-medium">Name (English) *</label>
@@ -838,7 +829,7 @@ export default function OwnerPage() {
                           value={productForm.nameAm}
                           onChange={(e) => setProductForm((f) => ({ ...f, nameAm: e.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                          placeholder="Optional — storefront falls back to English"
+                          placeholder="Optional"
                         />
                       </div>
                       <div>
@@ -851,14 +842,6 @@ export default function OwnerPage() {
                           onChange={(e) => setProductForm((f) => ({ ...f, price: e.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
                         />
-                        <p className="mt-1 text-xs text-slate-500">
-                          Updates the storefront and the price used on{" "}
-                          <Link href="/seller" className="font-medium text-primary-600 hover:underline">
-                            Seller
-                          </Link>{" "}
-                          for new sales. Existing floor-sale history stays at the amounts that were
-                          recorded.
-                        </p>
                       </div>
                       <div className="sm:col-span-2">
                         <label className="mb-1 block text-sm font-medium">Description (English)</label>
@@ -880,7 +863,7 @@ export default function OwnerPage() {
                           }
                           rows={2}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                          placeholder="Optional — storefront falls back to English"
+                          placeholder="Optional"
                         />
                       </div>
                       <div>
@@ -1096,7 +1079,7 @@ export default function OwnerPage() {
                       </div>
                       <div>
                         <label className="mb-1 block text-sm font-medium text-slate-700">
-                          Unit cost in ETB (what you paid per unit)
+                          Unit cost (ETB)
                         </label>
                         <input
                           type="number"
@@ -1111,7 +1094,7 @@ export default function OwnerPage() {
                       </div>
                       <div>
                         <label className="mb-1 block text-sm font-medium text-slate-700">
-                          Sale price per unit (customer price)
+                          Sale price (ETB)
                         </label>
                         <input
                           type="number"
@@ -1123,9 +1106,6 @@ export default function OwnerPage() {
                           }
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
                         />
-                        <p className="mt-1 text-xs text-slate-500">
-                          Updates the product&apos;s catalog price. Pre-filled from current price when you pick a product.
-                        </p>
                       </div>
                       <div className="sm:col-span-2">
                         <label className="mb-1 block text-sm font-medium text-slate-700">Notes</label>
@@ -1248,9 +1228,6 @@ export default function OwnerPage() {
                           <option value="SIX_MONTHS">6 months</option>
                           <option value="YEARLY">One year</option>
                         </select>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Label for what this payment covers.
-                        </p>
                       </div>
                     </div>
                     <button

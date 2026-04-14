@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { applyCouponToSubtotal, priceOrderLines } from "@/lib/order-pricing";
+import { priceOrderLines } from "@/lib/order-pricing";
 
-/** Public: preview totals with server-side pricing + optional coupon (no stock mutation). */
+/** Public: preview totals with server-side pricing (no stock mutation). */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, couponCode } = body;
+    const { items } = body;
     if (!items?.length) {
       return NextResponse.json({ error: "No items" }, { status: 400 });
     }
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       }
       merged.set(pid, (merged.get(pid) || 0) + q);
     }
-    const lineInputs = [...merged.entries()].map(([productId, quantity]) => ({
+    const lineInputs = Array.from(merged.entries()).map(([productId, quantity]) => ({
       productId,
       quantity,
     }));
@@ -28,12 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: priced.error }, { status: 400 });
     }
 
-    const couponResult = await applyCouponToSubtotal(priced.subtotal, couponCode);
-    if (!couponResult.ok) {
-      return NextResponse.json({ error: couponResult.error }, { status: 400 });
-    }
-
-    const discountTotal = couponResult.discount;
+    const discountTotal = 0;
     const total = Math.round((priced.subtotal - discountTotal) * 100) / 100;
 
     return NextResponse.json({
@@ -41,8 +36,6 @@ export async function POST(request: NextRequest) {
       discountTotal,
       total,
       lines: priced.pricedLines,
-      couponApplied: Boolean(couponResult.coupon),
-      couponCode: couponResult.codeSnapshot,
     });
   } catch (e) {
     console.error(e);

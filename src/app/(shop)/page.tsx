@@ -8,6 +8,7 @@ import { ShopNav } from "@/components/catalog/ShopNav";
 import { FirstSetupBanner } from "@/components/staff/FirstSetupBanner";
 import { categoryDisplayName } from "@/lib/category-i18n";
 import { useShopLocale } from "@/context/LocaleContext";
+import { productDisplayName } from "@/lib/products-i18n";
 import { categoryPathSlug } from "@/lib/slug";
 
 type CategoryRow = {
@@ -15,7 +16,20 @@ type CategoryRow = {
   name: string;
   nameAm?: string | null;
   slug: string | null;
+  previewImageUrl?: string | null;
   _count: { products: number };
+};
+
+type OfferProduct = {
+  id: string;
+  name: string;
+  nameAm?: string | null;
+  imageUrl: string | null;
+  imageUrls?: string[];
+  promotionLabel?: string | null;
+  promotionLabelAm?: string | null;
+  isFlashSale?: boolean;
+  promotionPercentOff?: number | null;
 };
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -51,14 +65,9 @@ export default function ShopHomePage() {
   const { t, locale } = useShopLocale();
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loadingCats, setLoadingCats] = useState(true);
+  const [offerProducts, setOfferProducts] = useState<OfferProduct[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(true);
   const reduce = useReducedMotion();
-
-  const homeOfferTiles = [
-    { key: "homeOfferLaptops" as const },
-    { key: "homeOfferScreens" as const },
-    { key: "homeOfferGaming" as const },
-    { key: "homeOfferAccessories" as const },
-  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -79,35 +88,46 @@ export default function ShopHomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/products?limit=24")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const offered = Array.isArray(data)
+          ? data
+              .filter(
+                (p) =>
+                  Boolean(p?.isFlashSale) ||
+                  (typeof p?.promotionLabel === "string" && p.promotionLabel.trim()) ||
+                  (typeof p?.promotionLabelAm === "string" && p.promotionLabelAm.trim())
+              )
+              .sort(
+                (a, b) =>
+                  Number(b?.promotionPercentOff ?? 0) - Number(a?.promotionPercentOff ?? 0)
+              )
+              .slice(0, 8)
+          : [];
+        setOfferProducts(offered);
+        setLoadingOffers(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setOfferProducts([]);
+        setLoadingOffers(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <ShopNav current="home" theme="dark" />
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 pb-16 pt-4 text-slate-900">
-        <div className="pointer-events-none absolute inset-0">
-          {!reduce && (
-            <>
-              <motion.div
-                className="absolute -left-24 top-20 h-72 w-72 rounded-full bg-primary-400/20 blur-[100px]"
-                animate={{ x: [0, 40, 0], y: [0, 24, 0], scale: [1, 1.08, 1] }}
-                transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute -right-16 top-32 h-80 w-80 rounded-full bg-sky-300/25 blur-[100px]"
-                animate={{ x: [0, -36, 0], y: [0, 28, 0] }}
-                transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </>
-          )}
-        </div>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-3">
+        <FirstSetupBanner variant="light" className="mb-6" />
 
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4">
-          <FirstSetupBanner variant="light" className="mb-8" />
-
-        </div>
-      </section>
-
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         <section className="mb-12">
           <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">{t("shopByCategory")}</h2>
           {loadingCats ? (
@@ -130,8 +150,17 @@ export default function ShopHomePage() {
                       href={`/catalog/category/${encodeURIComponent(pathSlug)}`}
                       className="group flex flex-col items-center gap-3 rounded-xl p-3 text-center transition hover:bg-white hover:shadow-sm"
                     >
-                      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 text-2xl text-primary-600">
-                        {c.name.charAt(0).toUpperCase()}
+                      <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-primary-50 text-2xl text-primary-600">
+                        {c.previewImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={c.previewImageUrl}
+                            alt={categoryDisplayName({ name: c.name, nameAm: c.nameAm }, locale)}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          c.name.charAt(0).toUpperCase()
+                        )}
                       </span>
                       <span className="text-sm font-semibold text-slate-800 group-hover:text-primary-700">
                         {categoryDisplayName({ name: c.name, nameAm: c.nameAm }, locale)}
@@ -144,34 +173,56 @@ export default function ShopHomePage() {
           )}
         </section>
 
-        <section className="mb-12">
-          <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">{t("topOffers")}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {homeOfferTiles.map(({ key }, i) => (
-              <Link
-                key={key}
-                href="/catalog"
-                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              >
-                <div
-                  className={`h-40 ${
-                    i % 4 === 0
-                      ? "bg-gradient-to-br from-primary-100 to-primary-200"
-                      : i % 4 === 1
-                        ? "bg-gradient-to-br from-slate-100 to-slate-200"
-                        : i % 4 === 2
-                          ? "bg-gradient-to-br from-primary-200 to-primary-300"
-                          : "bg-gradient-to-br from-emerald-100 to-primary-100"
-                  }`}
-                />
-                <div className="p-4">
-                  <p className="font-semibold text-slate-900 group-hover:text-primary-700">{t(key)}</p>
-                  <p className="mt-1 text-sm text-slate-500">{t("shopNow")}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+        {(loadingOffers || offerProducts.length > 0) && (
+          <section className="mb-12">
+            <h2 className="mb-6 text-center text-3xl font-bold text-slate-900">{t("topOffers")}</h2>
+            {loadingOffers ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-52 animate-pulse rounded-xl bg-slate-200" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {offerProducts.map((p) => {
+                  const img = p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls[0] : p.imageUrl;
+                  const displayName = productDisplayName(
+                    { name: p.name, nameAm: p.nameAm ?? null },
+                    locale
+                  );
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/catalog/${p.id}`}
+                      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                    >
+                      <div className="relative h-40 overflow-hidden bg-slate-100">
+                        {img ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={img}
+                            alt={displayName}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-4xl text-slate-300">
+                            —
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <p className="line-clamp-2 font-semibold text-slate-900 group-hover:text-primary-700">
+                          {displayName}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">{t("shopNow")}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
         <motion.section
           className="mb-16"

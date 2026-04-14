@@ -9,6 +9,7 @@ export type EffectivePriceResult = {
   promotion: null | {
     id: string;
     name: string;
+    nameAm?: string | null;
     percentOff: number;
     isFlashSale: boolean;
   };
@@ -68,16 +69,14 @@ export function pickBestPromotion(
 
 export function computeEffectivePrice(
   product: ProductForPricing,
-  dynamicRule: DynamicPricingRule | null,
+  _dynamicRule: DynamicPricingRule | null,
   promotions: Promotion[],
   now = new Date()
 ): EffectivePriceResult {
   const listPrice = product.price;
-  const { price: afterDynamic, applied: dynamicApplied } = applyDynamicRule(
-    listPrice,
-    product.stock,
-    dynamicRule
-  );
+  // Dynamic pricing is currently disabled; keep list price as-is.
+  const afterDynamic = listPrice;
+  const dynamicApplied = false;
   const promo = pickBestPromotion(product, promotions, now);
   const pct = promo ? clampPercent(promo.percentOff) : 0;
   const effectivePrice =
@@ -93,6 +92,7 @@ export function computeEffectivePrice(
       ? {
           id: promo.id,
           name: promo.name,
+        nameAm: (promo as Promotion & { nameAm?: string | null }).nameAm ?? null,
           percentOff: promo.percentOff,
           isFlashSale: promo.isFlashSale,
         }
@@ -169,15 +169,15 @@ export function attachPricingToProductJson(
   const { dynamicPricing: _d, ...rest } = product as ProductForPricing & {
     dynamicPricing?: DynamicPricingRule | null;
   };
-  const dyn = product.dynamicPricing ?? null;
   const { listPrice, afterDynamicPrice, effectivePrice, promotion, dynamicApplied } =
-    computeEffectivePrice(product, dyn, promotions, now);
+    computeEffectivePrice(product, null, promotions, now);
   return {
     ...rest,
     listPrice,
     afterDynamicPrice,
     effectivePrice,
     promotionLabel: promotion?.name ?? null,
+    promotionLabelAm: promotion?.nameAm ?? null,
     promotionPercentOff: promotion?.percentOff ?? null,
     isFlashSale: promotion?.isFlashSale ?? false,
     dynamicPricingApplied: dynamicApplied,

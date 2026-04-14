@@ -45,10 +45,16 @@ export default function SellerPage() {
 
   const comboboxRef = useRef<HTMLDivElement>(null);
 
+  const staffCred: RequestInit = { credentials: "include" };
+  const staffJson: RequestInit = {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  };
+
   const fetchAll = async () => {
     const [pRes, sRes] = await Promise.all([
-      fetch("/api/products"),
-      fetch("/api/sales?period=all"),
+      fetch("/api/products", staffCred),
+      fetch("/api/sales?period=all", staffCred),
     ]);
     setProducts(await pRes.json());
     const salesData = await sRes.json();
@@ -171,8 +177,8 @@ export default function SellerPage() {
 
     const res = editingSaleId
       ? await fetch(`/api/sales/${editingSaleId}`, {
+          ...staffJson,
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productId: selectedProductId,
             quantity: qty,
@@ -180,8 +186,8 @@ export default function SellerPage() {
           }),
         })
       : await fetch("/api/sales", {
+          ...staffJson,
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productId: selectedProductId,
             quantity: qty,
@@ -232,10 +238,7 @@ export default function SellerPage() {
             </h2>
             {editingSaleId && (
               <div className="mb-4 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  You are fixing a sale already recorded. Update product, price, or quantity, then
-                  save — stock is adjusted automatically.
-                </span>
+                <span>Editing an existing sale.</span>
                 <button
                   type="button"
                   onClick={resetSaleForm}
@@ -294,9 +297,6 @@ export default function SellerPage() {
                     No products match “{searchText.trim()}”.
                   </p>
                 )}
-                <p className="mt-1 text-xs text-slate-500">
-                  Pick from the list. You can set the actual sale price below (discount or markup).
-                </p>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="sale-unit-price">
@@ -316,8 +316,7 @@ export default function SellerPage() {
                 />
                 {selectedProduct && (
                   <p className="mt-1 text-xs text-slate-500">
-                    Catalog price: {formatMoney(selectedProduct.price)} — enter a lower or higher amount
-                    if needed.
+                    List: {formatMoney(selectedProduct.price)}
                   </p>
                 )}
               </div>

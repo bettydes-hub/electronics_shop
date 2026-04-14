@@ -20,6 +20,7 @@ export type CatalogProduct = {
   effectivePrice?: number;
   listPrice?: number;
   promotionLabel?: string | null;
+  promotionLabelAm?: string | null;
   isFlashSale?: boolean;
   category: string | null;
   categoryRef?: { name: string; nameAm?: string | null; slug?: string | null } | null;
@@ -53,6 +54,10 @@ export function ProductCard({
   );
   const unitPrice = p.effectivePrice ?? p.price;
   const listPrice = p.listPrice ?? p.price;
+  const promoLabel =
+    locale === "am"
+      ? (p.promotionLabelAm?.trim() || p.promotionLabel?.trim() || null)
+      : (p.promotionLabel?.trim() || p.promotionLabelAm?.trim() || null);
   const onSale = unitPrice < listPrice - 0.005;
   const avgRating = p.avgRating ?? null;
   const reviewCount = p.reviewCount ?? 0;
@@ -171,8 +176,8 @@ export function ProductCard({
               <p className="text-sm text-slate-400 line-through">{formatMoney(listPrice)}</p>
             ) : null}
           </div>
-          {p.promotionLabel ? (
-            <p className="mt-0.5 text-xs font-medium text-amber-700">{p.promotionLabel}</p>
+          {promoLabel ? (
+            <p className="mt-0.5 text-xs font-medium text-amber-700">{promoLabel}</p>
           ) : null}
           <p className="mt-1 text-xs text-primary-600 opacity-90 transition-opacity group-hover/product:opacity-100 group-hover/product:underline">
             {t("viewDetailsReviews")}

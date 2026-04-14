@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { isValidStaffUsername, normalizeStaffUsername } from "@/lib/staff-invite";
-import { setStaffSiteSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
+import { rateLimitExceeded } from "@/lib/rate-limit";
+import { setStaffSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
 
 /**
  * First-time shop setup only: allowed when there are zero users in the database.
@@ -19,6 +20,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (await rateLimitExceeded(request, "auth-bootstrap", 10, 3_600_000)) {
+    return NextResponse.json({ error: "Too many setup attempts. Try again later." }, { status: 429 });
+  }
   try {
     const existing = await prisma.user.count();
     if (existing > 0) {
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    setStaffSiteSessionCookieInRouteHandler();
+    await setStaffSessionCookieInRouteHandler(user.id, String(user.role));
     return NextResponse.json({
       ...user,
       role: String(user.role),

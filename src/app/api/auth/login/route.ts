@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { setStaffSiteSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
+import { rateLimitExceeded } from "@/lib/rate-limit";
+import { setStaffSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
 
 export async function POST(request: NextRequest) {
+  if (await rateLimitExceeded(request, "auth-login", 30, 60_000)) {
+    return NextResponse.json({ error: "Too many attempts. Try again in a minute." }, { status: 429 });
+  }
   try {
     const body = await request.json();
     const username =
@@ -50,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { passwordHash: _, ...safe } = user;
-    setStaffSiteSessionCookieInRouteHandler();
+    await setStaffSessionCookieInRouteHandler(user.id, String(safe.role));
     return NextResponse.json({
       ...safe,
       role: String(safe.role),

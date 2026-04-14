@@ -137,7 +137,7 @@ export function ProductGrid({
 
 type FeaturedProductsProps = { className?: string };
 
-/** Homepage strip: in-stock newest items, limited count */
+/** Homepage strip: top-selling products recorded by seller sales. */
 export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
   const { t } = useShopLocale();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -146,7 +146,7 @@ export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(buildProductsUrl({ q: "", featured: true, limit: 8 }))
+    fetch("/api/products/top-sellers?limit=8")
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;

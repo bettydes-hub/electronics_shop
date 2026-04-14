@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireOwner } from "@/lib/require-staff";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireOwner(request);
+  if (gate.response) return gate.response;
   try {
     const expenses = await prisma.expense.findMany({
       orderBy: { createdAt: "desc" },
@@ -19,6 +22,8 @@ export async function GET() {
 const PERIODS = ["WEEKLY", "MONTHLY", "THREE_MONTHS", "SIX_MONTHS", "YEARLY"] as const;
 
 export async function POST(request: NextRequest) {
+  const gate = await requireOwner(request);
+  if (gate.response) return gate.response;
   try {
     const body = await request.json();
     const { description, amount, category, period } = body;

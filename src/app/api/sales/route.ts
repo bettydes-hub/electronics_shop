@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireOwnerOrSeller } from "@/lib/require-staff";
 import { parseSalesPeriod, startDateForSalesPeriod } from "@/lib/sales-period";
 
 export async function GET(request: NextRequest) {
+  const gate = await requireOwnerOrSeller(request);
+  if (gate.response) return gate.response;
   try {
     const period = parseSalesPeriod(request.nextUrl.searchParams.get("period"));
     const start = startDateForSalesPeriod(period);
@@ -23,6 +26,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireOwnerOrSeller(request);
+  if (gate.response) return gate.response;
   try {
     const body = await request.json();
     const { productId, quantity, unitPrice: unitPriceRaw } = body;

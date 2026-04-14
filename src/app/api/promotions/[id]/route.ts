@@ -14,6 +14,9 @@ export async function PATCH(
     const body = await request.json();
     const data: Record<string, unknown> = {};
     if (body.name !== undefined) data.name = String(body.name).trim();
+    if (body.nameAm !== undefined) {
+      data.nameAm = body.nameAm != null && String(body.nameAm).trim() ? String(body.nameAm).trim() : null;
+    }
     if (body.percentOff !== undefined) {
       const pct = parseFloat(String(body.percentOff));
       if (Number.isNaN(pct) || pct <= 0 || pct > 100) {

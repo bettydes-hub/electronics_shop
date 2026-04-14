@@ -13,13 +13,10 @@ export default function CartPage() {
   const { t } = useShopLocale();
   const { items, removeItem, updateQuantity, clearCart } = useCart();
   const [serverTotal, setServerTotal] = useState<number | null>(null);
-  const [couponPreview, setCouponPreview] = useState("");
-  const [quoteDiscount, setQuoteDiscount] = useState<number | null>(null);
 
   useEffect(() => {
     if (items.length === 0) {
       setServerTotal(null);
-      setQuoteDiscount(null);
       return;
     }
     let cancelled = false;
@@ -28,7 +25,6 @@ export default function CartPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-        couponCode: couponPreview.trim() || undefined,
       }),
     })
       .then(async (res) => {
@@ -36,22 +32,19 @@ export default function CartPage() {
         if (cancelled) return;
         if (!res.ok || data.error) {
           setServerTotal(null);
-          setQuoteDiscount(null);
           return;
         }
         if (typeof data.total === "number") setServerTotal(data.total);
-        if (typeof data.discountTotal === "number") setQuoteDiscount(data.discountTotal);
       })
       .catch(() => {
         if (!cancelled) {
           setServerTotal(null);
-          setQuoteDiscount(null);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [items, couponPreview]);
+  }, [items]);
 
   if (items.length === 0) {
     return (
@@ -152,35 +145,17 @@ export default function CartPage() {
         </div>
 
         <div className="mt-8 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-left text-sm font-medium text-slate-700">
-            {t("couponTryLabel")}
-            <input
-              type="text"
-              value={couponPreview}
-              onChange={(e) => setCouponPreview(e.target.value.toUpperCase())}
-              placeholder="SAVE20"
-              className="mt-1 w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 uppercase"
-            />
-          </label>
           <div className="text-right">
             <p className="text-sm text-slate-600">{t("cartSubtotalSaved")}</p>
             <p className="text-lg font-bold text-slate-900">
               {formatMoney(items.reduce((s, i) => s + i.price * i.quantity, 0))}
             </p>
             {serverTotal != null ? (
-              <>
-                <p className="mt-2 text-sm text-slate-600">
-                  {t("cartLiveTotal")}
-                  {couponPreview.trim() ? t("cartLiveTotalCoupon") : ""}
-                  {t("cartLiveTotalEnd")}{" "}
-                  <span className="font-semibold text-primary-700">{formatMoney(serverTotal)}</span>
-                </p>
-                {quoteDiscount != null && quoteDiscount > 0 ? (
-                  <p className="text-xs text-emerald-700">
-                    {t("couponDiscountLine")} −{formatMoney(quoteDiscount)}
-                  </p>
-                ) : null}
-              </>
+              <p className="mt-2 text-sm text-slate-600">
+                {t("cartLiveTotal")}
+                {t("cartLiveTotalEnd")}{" "}
+                <span className="font-semibold text-primary-700">{formatMoney(serverTotal)}</span>
+              </p>
             ) : null}
           </div>
         </div>

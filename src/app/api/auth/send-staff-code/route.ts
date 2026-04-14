@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createInviteCodeAndSendEmail } from "@/lib/staff-invite";
+import { rateLimitExceeded } from "@/lib/rate-limit";
 
 /** Public: resend invite code to email if there is a pending (INVITED) staff row. */
 export async function POST(request: NextRequest) {
+  if (await rateLimitExceeded(request, "auth-send-staff-code", 15, 3_600_000)) {
+    return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
+  }
   try {
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";

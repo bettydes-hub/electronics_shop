@@ -117,7 +117,7 @@ export function StaffLoginForm() {
           <div className="space-y-2" aria-live="polite">
             {resetSuccess && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
-                Your password was updated. Sign in with your new password.
+                Password updated. Sign in.
               </div>
             )}
             {error && (
@@ -132,7 +132,6 @@ export function StaffLoginForm() {
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-600">
-          New invite from your admin?{" "}
           <Link href="/register" className="font-medium text-primary-600 hover:underline">
             Complete registration
           </Link>

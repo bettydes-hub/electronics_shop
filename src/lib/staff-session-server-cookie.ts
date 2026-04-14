@@ -1,30 +1,28 @@
 import { cookies } from "next/headers";
 import { STAFF_SITE_SESSION_COOKIE } from "@/lib/staff-session-constants";
+import { signStaffSessionToken, STAFF_SESSION_MAX_AGE_SEC } from "@/lib/staff-session-jwt";
 
-const MAX_AGE_SEC = 60 * 60 * 24 * 30;
-
-const cookieOpts = {
+const baseOpts = {
   httpOnly: true,
   sameSite: "lax" as const,
   path: "/",
-  maxAge: MAX_AGE_SEC,
   secure: process.env.NODE_ENV === "production",
 };
 
 /**
- * Use inside Route Handlers so Set-Cookie is applied reliably (works better with
- * browser fetch than only mutating NextResponse.cookies in some Next versions).
+ * Sets the HttpOnly staff session cookie (signed JWT). Use from Route Handlers only.
  */
-export function setStaffSiteSessionCookieInRouteHandler(): void {
-  cookies().set(STAFF_SITE_SESSION_COOKIE, "1", cookieOpts);
+export async function setStaffSessionCookieInRouteHandler(userId: string, role: string): Promise<void> {
+  const token = await signStaffSessionToken(userId, role);
+  cookies().set(STAFF_SITE_SESSION_COOKIE, token, {
+    ...baseOpts,
+    maxAge: STAFF_SESSION_MAX_AGE_SEC,
+  });
 }
 
-export function clearStaffSiteSessionCookieInRouteHandler(): void {
+export function clearStaffSessionCookieInRouteHandler(): void {
   cookies().set(STAFF_SITE_SESSION_COOKIE, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
+    ...baseOpts,
     maxAge: 0,
-    secure: process.env.NODE_ENV === "production",
   });
 }

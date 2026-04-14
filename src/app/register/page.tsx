@@ -108,13 +108,6 @@ export default function RegisterPage() {
 
       <main className="mx-auto max-w-lg px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">Complete your staff account</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Code from your invite email, then username and password. Sign in at{" "}
-          <Link href="/login" className="font-medium text-primary-600 hover:underline">
-            /login
-          </Link>
-          .
-        </p>
 
         <form
           onSubmit={onSubmit}

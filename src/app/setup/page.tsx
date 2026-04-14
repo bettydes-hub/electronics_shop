@@ -102,13 +102,6 @@ export default function SetupPage() {
 
       <main className="mx-auto max-w-lg px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">First-time setup</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Only works when there are no users yet. Then use{" "}
-          <Link href="/login" className="font-medium text-primary-600 hover:underline">
-            /login
-          </Link>
-          .
-        </p>
 
         {checking ? (
           <p className="mt-8 text-slate-500">Checking…</p>
@@ -116,11 +109,9 @@ export default function SetupPage() {
           <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
             <p className="font-semibold">Setup is already done</p>
             <p className="mt-2">
-              An account already exists. Sign in at{" "}
               <Link href="/login" className="font-medium text-primary-700 underline">
-                /login
+                Sign in
               </Link>
-              .
             </p>
           </div>
         ) : (

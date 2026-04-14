@@ -24,10 +24,9 @@ export async function priceOrderLines(
   | { ok: false; error: string }
 > {
   if (!lines.length) return { ok: false, error: "No items" };
-  const ids = [...new Set(lines.map((l) => l.productId))];
+  const ids = Array.from(new Set(lines.map((l) => l.productId)));
   const products = await prisma.product.findMany({
     where: { id: { in: ids } },
-    include: { dynamicPricing: true },
   });
   const byId = new Map(products.map((p) => [p.id, p]));
   const promotions = await loadActivePromotions(prisma, now);
@@ -38,12 +37,7 @@ export async function priceOrderLines(
     if (qty <= 0) return { ok: false, error: "Invalid quantity" };
     const p = byId.get(line.productId);
     if (!p) return { ok: false, error: `Product not found: ${line.productId}` };
-    const { effectivePrice, listPrice } = computeEffectivePrice(
-      p,
-      p.dynamicPricing,
-      promotions,
-      now
-    );
+    const { effectivePrice, listPrice } = computeEffectivePrice(p, null, promotions, now);
     pricedLines.push({
       productId: p.id,
       quantity: qty,

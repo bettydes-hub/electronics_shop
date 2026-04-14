@@ -129,16 +129,9 @@ export function ShopNav({
   return (
     <nav className={dark ? "border-b border-primary-800/50 bg-primary-700" : "border-b border-slate-200 bg-white"}>
       <div className={dark ? "border-b border-primary-600/70 bg-primary-600/90" : "border-b border-slate-200 bg-slate-50"}>
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-2 text-xs">
-          <p className={dark ? "text-emerald-50/95" : "text-slate-600"}>{t("navTagline")}</p>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-3 px-4 py-2 text-xs">
           <div className="flex flex-wrap items-center justify-end gap-3">
             <LanguageSwitcher theme={dark ? "dark" : "light"} />
-            <Link href="/catalog" className={dark ? "text-emerald-100 hover:text-white" : "text-slate-600 hover:text-slate-900"}>
-              {t("navDeals")}
-            </Link>
-            <Link href="/login" className={dark ? "text-emerald-100 hover:text-white" : "text-slate-600 hover:text-slate-900"}>
-              {t("navStaffLogin")}
-            </Link>
           </div>
         </div>
       </div>

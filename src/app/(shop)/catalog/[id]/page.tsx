@@ -21,6 +21,7 @@ type Product = {
   effectivePrice?: number;
   listPrice?: number;
   promotionLabel?: string | null;
+  promotionLabelAm?: string | null;
   isFlashSale?: boolean;
   category: string | null;
   categoryRef?: { name: string; nameAm?: string | null; slug?: string | null } | null;
@@ -134,6 +135,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     () => (product ? productDisplayDescription(product, locale) : null),
     [product, locale]
   );
+  const promoLabel = useMemo(() => {
+    if (!product) return null;
+    if (locale === "am") return product.promotionLabelAm?.trim() || product.promotionLabel?.trim() || null;
+    return product.promotionLabel?.trim() || product.promotionLabelAm?.trim() || null;
+  }, [product, locale]);
 
   const categoryEnName = product?.categoryRef?.name ?? product?.category ?? null;
   const categorySlug = product?.categoryRef?.slug ?? null;
@@ -284,8 +290,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 <p className="text-xl text-slate-400 line-through">{formatMoney(listPrice)}</p>
               ) : null}
             </div>
-            {product.promotionLabel ? (
-              <p className="mt-1 text-sm font-medium text-amber-700">{product.promotionLabel}</p>
+            {promoLabel ? (
+              <p className="mt-1 text-sm font-medium text-amber-700">{promoLabel}</p>
             ) : null}
             {product.isFlashSale ? (
               <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-600">

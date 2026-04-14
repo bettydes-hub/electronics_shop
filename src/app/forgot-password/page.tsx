@@ -68,10 +68,6 @@ export default function ForgotPasswordPage() {
 
       <main className="mx-auto max-w-lg px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">Forgot password</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Enter the username you use to sign in and/or your account email. If you fill both, they must
-          match the same account. We only send the link to the email on file.
-        </p>
 
         <form
           onSubmit={onSubmit}
@@ -79,7 +75,7 @@ export default function ForgotPasswordPage() {
         >
           <div>
             <label htmlFor="forgot-user" className="mb-1 block text-sm font-medium text-slate-700">
-              Username <span className="font-normal text-slate-500">(optional if you use email)</span>
+              Username
             </label>
             <input
               id="forgot-user"
@@ -93,7 +89,7 @@ export default function ForgotPasswordPage() {
           </div>
           <div>
             <label htmlFor="forgot-email" className="mb-1 block text-sm font-medium text-slate-700">
-              Email <span className="font-normal text-slate-500">(optional if you use username)</span>
+              Email
             </label>
             <input
               id="forgot-email"
@@ -105,7 +101,6 @@ export default function ForgotPasswordPage() {
               placeholder="you@company.com"
             />
           </div>
-          <p className="text-xs text-slate-500">At least one field is required.</p>
           <button
             type="submit"
             disabled={loading}

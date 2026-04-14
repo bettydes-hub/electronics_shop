@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function POST(request: NextRequest) {
+  const gate = await requireAdmin(request);
+  if (gate.response) return gate.response;
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;

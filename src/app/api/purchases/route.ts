@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireOwner } from "@/lib/require-staff";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireOwner(request);
+  if (gate.response) return gate.response;
   try {
     const purchases = await prisma.purchase.findMany({
       include: { product: true },
@@ -18,6 +21,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireOwner(request);
+  if (gate.response) return gate.response;
   try {
     const body = await request.json();
     const { productId, quantity, unitCost, unitSalePrice, notes } = body;

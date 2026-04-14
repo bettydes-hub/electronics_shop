@@ -19,10 +19,28 @@ export async function GET() {
     }
 
     const categories = await prisma.category.findMany({
-      include: { _count: { select: { products: true } } },
+      include: {
+        _count: { select: { products: true } },
+        products: {
+          select: { imageUrl: true, imageUrls: true },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
       orderBy: { name: "asc" },
     });
-    return NextResponse.json(categories);
+    const categoriesWithPreview = categories.map((c) => {
+      const first = c.products[0];
+      const previewImageUrl =
+        first?.imageUrls && first.imageUrls.length > 0
+          ? first.imageUrls[0]
+          : first?.imageUrl ?? null;
+      return {
+        ...c,
+        previewImageUrl,
+      };
+    });
+    return NextResponse.json(categoriesWithPreview);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -34,7 +52,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const gate = await requireAdmin(request);
-  if (!gate.user) return gate.response;
+  if (gate.response) return gate.response;
 
   try {
     const body = await request.json();

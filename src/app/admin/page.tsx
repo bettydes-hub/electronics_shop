@@ -72,10 +72,11 @@ function AdminTabFlash({ flash, tab }: { flash: AdminFlash | null; tab: Tab }) {
   );
 }
 
-function adminHeaders(): Record<string, string> {
-  const { id } = readStaffSession();
-  return id ? { "x-user-id": id } : {};
-}
+const staffCred: RequestInit = { credentials: "include" };
+const staffJson: RequestInit = {
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+};
 
 export default function AdminPage() {
   const gate = useStaffDashboardGate("admin");
@@ -134,12 +135,11 @@ export default function AdminPage() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const headers = adminHeaders();
       const [p, c, uRes, settingsRes] = await Promise.all([
-        fetch("/api/products").then((r) => r.json()),
-        fetch("/api/categories").then((r) => r.json()),
-        fetch("/api/users", { headers }),
-        fetch("/api/shop-settings"),
+        fetch("/api/products", staffCred).then((r) => r.json()),
+        fetch("/api/categories", staffCred).then((r) => r.json()),
+        fetch("/api/users", staffCred),
+        fetch("/api/shop-settings", staffCred),
       ]);
       setProducts(Array.isArray(p) ? p : []);
       setCategories(Array.isArray(c) ? c : []);
@@ -176,7 +176,7 @@ export default function AdminPage() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch("/api/shop-settings");
+        const r = await fetch("/api/shop-settings", staffCred);
         const data = await r.json();
         if (cancelled || data?.error) return;
         setStoreForm({
@@ -323,8 +323,8 @@ export default function AdminPage() {
     try {
       if (editingId) {
         const res = await fetch(`/api/products/${editingId}`, {
+          ...staffJson,
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -332,8 +332,8 @@ export default function AdminPage() {
         showMsg("products", "success", "Product updated");
       } else {
         const res = await fetch("/api/products", {
+          ...staffJson,
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -364,8 +364,8 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       const res = await fetch("/api/categories", {
+        ...staffJson,
         method: "POST",
-        headers: { "Content-Type": "application/json", ...adminHeaders() },
         body: JSON.stringify({
           name: catForm.name.trim(),
           nameAm: catForm.nameAm.trim() || null,
@@ -395,8 +395,8 @@ export default function AdminPage() {
     }
     try {
       const res = await fetch("/api/users", {
+        ...staffJson,
         method: "POST",
-        headers: { "Content-Type": "application/json", ...adminHeaders() },
         body: JSON.stringify({
           email: userForm.email.trim(),
           role: userForm.role,
@@ -428,8 +428,8 @@ export default function AdminPage() {
     setResendingUserId(userId);
     try {
       const res = await fetch(`/api/users/${userId}/resend-invite`, {
+        ...staffCred,
         method: "POST",
-        headers: adminHeaders(),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed");
@@ -449,7 +449,7 @@ export default function AdminPage() {
       return;
     }
     try {
-      const res = await fetch(`/api/users/${id}`, { method: "DELETE", headers: adminHeaders() });
+      const res = await fetch(`/api/users/${id}`, { ...staffCred, method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed");
       showMsg("staff", "success", "Staff removed");
@@ -461,19 +461,16 @@ export default function AdminPage() {
 
   const handleStoreSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { id: userId, role } = readStaffSession();
-    if (!userId || !canManageStaff(role)) {
+    const session = readStaffSession();
+    if (!session.id || !canManageStaff(session.role)) {
       showMsg("store", "error", "Admin or Owner sign-in required.");
       return;
     }
     setStoreSaving(true);
     try {
       const res = await fetch("/api/shop-settings", {
+        ...staffJson,
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": userId,
-        },
         body: JSON.stringify({
           storeName: storeForm.storeName,
           address: storeForm.address,
@@ -540,7 +537,7 @@ export default function AdminPage() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
     try {
-      await fetch(`/api/products/${id}`, { method: "DELETE" });
+      await fetch(`/api/products/${id}`, { ...staffCred, method: "DELETE" });
       showMsg("products", "success", "Product deleted");
       fetchAll();
     } catch {
@@ -559,7 +556,7 @@ export default function AdminPage() {
     }
     if (!confirm("Delete this category?")) return;
     try {
-      await fetch(`/api/categories/${c.id}`, { method: "DELETE", headers: adminHeaders() });
+      await fetch(`/api/categories/${c.id}`, { ...staffCred, method: "DELETE" });
       showMsg("categories", "success", "Category deleted");
       fetchAll();
     } catch {
@@ -577,8 +574,8 @@ export default function AdminPage() {
     if (!editingCategoryId) return;
     try {
       const res = await fetch(`/api/categories/${editingCategoryId}`, {
+        ...staffJson,
         method: "PUT",
-        headers: { "Content-Type": "application/json", ...adminHeaders() },
         body: JSON.stringify(categoryEditForm),
       });
       const data = await res.json();
@@ -601,14 +598,14 @@ export default function AdminPage() {
     try {
       for (const [productId, newCatName] of updates) {
         await fetch(`/api/products/${productId}`, {
+          ...staffJson,
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ category: newCatName }),
         });
       }
       await fetch(`/api/categories/${recategorizeCategory.id}`, {
+        ...staffCred,
         method: "DELETE",
-        headers: adminHeaders(),
       });
       showMsg("categories", "success", "Products recategorized and category deleted");
       setRecategorizeCategory(null);
@@ -713,7 +710,7 @@ export default function AdminPage() {
                           value={form.nameAm}
                           onChange={(e) => setForm((f) => ({ ...f, nameAm: e.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                          placeholder="Optional — storefront falls back to English"
+                          placeholder="Optional"
                         />
                       </div>
                       <div>
@@ -743,7 +740,7 @@ export default function AdminPage() {
                           onChange={(e) => setForm((f) => ({ ...f, descriptionAm: e.target.value }))}
                           rows={2}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                          placeholder="Optional — storefront falls back to English"
+                          placeholder="Optional"
                         />
                       </div>
                       <div>
@@ -876,7 +873,7 @@ export default function AdminPage() {
                         type="text"
                         value={catForm.nameAm}
                         onChange={(e) => setCatForm((f) => ({ ...f, nameAm: e.target.value }))}
-                        placeholder="Optional — URL stays English-based"
+                        placeholder="Optional"
                         className="rounded-lg border border-slate-300 px-3 py-2"
                       />
                     </div>
@@ -1020,13 +1017,6 @@ export default function AdminPage() {
                   className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
                 >
                   <h3 className="mb-2 font-semibold">Invite staff</h3>
-                  <p className="mb-4 text-sm text-slate-500">
-                    They get a code by email, then finish at{" "}
-                    <Link href="/register" className="font-medium text-primary-600 hover:underline">
-                      /register
-                    </Link>
-                    .
-                  </p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-sm font-medium">Email *</label>

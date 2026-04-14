@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProductImageLimits, productImageCountError } from "@/lib/product-image-limits";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import { attachPricingToProductJson, loadActivePromotions } from "@/lib/effective-price";
 
 export async function GET(
@@ -12,7 +13,6 @@ export async function GET(
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
-        dynamicPricing: true,
         categoryRef: { select: { id: true, name: true, nameAm: true, slug: true } },
       },
     });
@@ -34,6 +34,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const gate = await requireAdmin(request);
+  if (gate.response) return gate.response;
   try {
     const { id } = await params;
     const body = await request.json();
@@ -106,9 +108,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const gate = await requireAdmin(request);
+  if (gate.response) return gate.response;
   try {
     const { id } = await params;
     await prisma.product.delete({ where: { id } });

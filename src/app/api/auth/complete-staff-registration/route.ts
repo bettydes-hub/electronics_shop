@@ -5,9 +5,13 @@ import {
   isValidStaffUsername,
   normalizeStaffUsername,
 } from "@/lib/staff-invite";
-import { setStaffSiteSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
+import { rateLimitExceeded } from "@/lib/rate-limit";
+import { setStaffSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
 
 export async function POST(request: NextRequest) {
+  if (await rateLimitExceeded(request, "auth-complete-registration", 20, 3_600_000)) {
+    return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
+  }
   try {
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -106,7 +110,7 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    setStaffSiteSessionCookieInRouteHandler();
+    await setStaffSessionCookieInRouteHandler(updated.id, String(updated.role));
     return NextResponse.json({
       ...updated,
       role: String(updated.role),

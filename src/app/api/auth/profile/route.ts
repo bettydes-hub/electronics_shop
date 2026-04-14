@@ -2,40 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { isValidStaffUsername, normalizeStaffUsername } from "@/lib/staff-invite";
-
-function staffId(request: NextRequest): string {
-  return request.headers.get("x-user-id")?.trim() ?? "";
-}
+import { requireActiveStaff } from "@/lib/require-staff";
+import { setStaffSessionCookieInRouteHandler } from "@/lib/staff-session-server-cookie";
 
 export async function GET(request: NextRequest) {
-  const id = staffId(request);
-  if (!id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { id: true, username: true, email: true, name: true, role: true, staffStatus: true },
-  });
-
-  if (!user || user.staffStatus !== "ACTIVE") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireActiveStaff(request);
+  if (gate.response) return gate.response;
 
   return NextResponse.json({
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    name: user.name,
-    role: String(user.role),
+    id: gate.user.id,
+    username: gate.user.username,
+    email: gate.user.email,
+    name: gate.user.name,
+    role: String(gate.user.role),
   });
 }
 
 export async function PATCH(request: NextRequest) {
-  const id = staffId(request);
-  if (!id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireActiveStaff(request);
+  if (gate.response) return gate.response;
+  const id = gate.user.id;
 
   let body: Record<string, unknown>;
   try {
@@ -157,12 +143,16 @@ export async function PATCH(request: NextRequest) {
       data: updates,
       select: { id: true, username: true, email: true, name: true, role: true },
     });
+    const roleStr = String(updated.role);
+    if (updates.passwordHash) {
+      await setStaffSessionCookieInRouteHandler(updated.id, roleStr);
+    }
     return NextResponse.json({
       id: updated.id,
       username: updated.username,
       email: updated.email,
       name: updated.name,
-      role: String(updated.role),
+      role: roleStr,
     });
   } catch (e: unknown) {
     console.error(e);

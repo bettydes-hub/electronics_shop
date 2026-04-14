@@ -14,12 +14,10 @@ import {
 } from "@/lib/staff-routes";
 import { readStaffSession } from "@/lib/staff-session";
 
-function profileHeaders(): Record<string, string> {
-  const { id } = readStaffSession();
-  const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (id) h["x-user-id"] = id;
-  return h;
-}
+const profileJson: RequestInit = {
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+};
 
 export default function StaffProfilePage() {
   const router = useRouter();
@@ -52,7 +50,7 @@ export default function StaffProfilePage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/auth/profile", { headers: profileHeaders() });
+        const res = await fetch("/api/auth/profile", { credentials: "include" });
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
@@ -110,8 +108,8 @@ export default function StaffProfilePage() {
       }
 
       const res = await fetch("/api/auth/profile", {
+        ...profileJson,
         method: "PATCH",
-        headers: profileHeaders(),
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -175,9 +173,6 @@ export default function StaffProfilePage() {
 
       <main className="mx-auto max-w-lg px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">My profile</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Update your display name, username, email, or password. Your role is set by an admin.
-        </p>
 
         {loading ? (
           <p className="mt-8 text-slate-500">Loading…</p>
@@ -227,7 +222,6 @@ export default function StaffProfilePage() {
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2"
               />
-              <p className="mt-1 text-xs text-slate-500">Lowercase, 3–32 characters; used to sign in.</p>
             </div>
 
             <div>

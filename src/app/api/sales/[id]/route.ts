@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireOwnerOrSeller } from "@/lib/require-staff";
 
 /** Restore stock for the old line, then apply the updated line (product / qty / price). */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const gate = await requireOwnerOrSeller(request);
+  if (gate.response) return gate.response;
   try {
     const { id } = await params;
     const body = await request.json();

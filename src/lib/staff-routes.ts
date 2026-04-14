@@ -32,7 +32,7 @@ export function parseStaffArea(segment: string): StaffDashboardArea | null {
 }
 
 /**
- * Admin panel: ADMIN and OWNER. Owner dashboard: OWNER only. Seller: SELLER only.
+ * Strict dashboard area routing per role.
  */
 export function sessionMayAccessStaffArea(
   sessionRole: string | null,
@@ -40,7 +40,7 @@ export function sessionMayAccessStaffArea(
 ): boolean {
   const r = normalizeStaffRole(sessionRole);
   if (!r) return false;
-  if (area === "admin") return r === "ADMIN" || r === "OWNER";
+  if (area === "admin") return r === "ADMIN";
   if (area === "owner") return r === "OWNER";
   return r === "SELLER";
 }
@@ -49,7 +49,7 @@ function roleMayAccessPathPrefix(role: string | null, pathNoQuery: string): bool
   const r = normalizeStaffRole(role);
   if (!r) return false;
   if (pathNoQuery === "/admin" || pathNoQuery.startsWith("/admin/")) {
-    return r === "ADMIN" || r === "OWNER";
+    return r === "ADMIN";
   }
   if (pathNoQuery === "/owner" || pathNoQuery.startsWith("/owner/")) {
     return r === "OWNER";

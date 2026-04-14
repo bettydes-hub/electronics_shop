@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getProductImageLimits, productImageCountError } from "@/lib/product-image-limits";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import { categoryPathSlug, slugifyName } from "@/lib/slug";
 import { attachPricingToProductJson, loadActivePromotions } from "@/lib/effective-price";
 
@@ -94,7 +95,6 @@ export async function GET(request: NextRequest) {
       orderBy,
       take,
       include: {
-        dynamicPricing: true,
         categoryRef: { select: { id: true, name: true, nameAm: true, slug: true } },
       },
     });
@@ -141,6 +141,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireAdmin(request);
+  if (gate.response) return gate.response;
   try {
     const body = await request.json();
     const { name, description, nameAm, descriptionAm, price, costPrice, category, imageUrl, imageUrls, stock } =

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth.response) return auth.response;
   try {
     const list = await prisma.promotion.findMany({
       orderBy: { endsAt: "desc" },
@@ -23,6 +25,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name,
+      nameAm,
       scope,
       productId,
       categoryId,
@@ -60,6 +63,7 @@ export async function POST(request: NextRequest) {
     const row = await prisma.promotion.create({
       data: {
         name: String(name).trim(),
+        nameAm: nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : null,
         scope,
         productId: scope === "PRODUCT" ? String(productId) : null,
         categoryId: scope === "CATEGORY" ? String(categoryId) : null,

@@ -76,7 +76,6 @@ function ResetPasswordForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
         </div>
         <div>
           <label htmlFor="confirm-pass" className="mb-1 block text-sm font-medium text-slate-700">
@@ -122,7 +121,6 @@ export default function ResetPasswordPage() {
 
       <main className="mx-auto max-w-lg px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900">Set a new password</h1>
-        <p className="mt-2 text-sm text-slate-600">New password (min 8 characters).</p>
 
         <div className="mt-8">
           <Suspense
