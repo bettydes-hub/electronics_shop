@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
           passwordHash,
           name,
           staffStatus: "ACTIVE",
+          role: "ADMIN",
         },
         select: {
           id: true,

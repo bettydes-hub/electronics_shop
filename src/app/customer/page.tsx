@@ -1,5 +1,5 @@
-import { CustomerHub } from "@/components/landing/CustomerHub";
+import { redirect } from "next/navigation";
 
-export default function CustomerPage() {
-  return <CustomerHub />;
+export default function CustomerRedirectPage() {
+  redirect("/");
 }

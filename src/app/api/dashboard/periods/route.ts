@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwner } from "@/lib/require-staff";
+import { requireAdmin } from "@/lib/require-staff";
+import { sumIncomeInRange } from "@/lib/finance-income";
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
@@ -27,7 +28,6 @@ function endOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
 }
 
-/** First day of the month, `monthOffset` months from `d`'s month (0 = same month). */
 function startOfMonthWithOffset(d: Date, monthOffset: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + monthOffset, 1, 0, 0, 0, 0);
 }
@@ -40,42 +40,39 @@ function endOfYear(d: Date): Date {
   return new Date(d.getFullYear(), 11, 31, 23, 59, 59, 999);
 }
 
+function toUtcDateOnly(d: Date): Date {
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+}
+
 async function summarizeRange(start: Date, end: Date) {
-  const whereDate = { gte: start, lte: end };
-  const [purchases, expenses, sales] = await Promise.all([
-    prisma.purchase.aggregate({
-      _sum: { totalCost: true },
-      where: { createdAt: whereDate },
-    }),
+  const incomeStart = toUtcDateOnly(start);
+  const incomeEnd = toUtcDateOnly(end);
+
+  const [income, expenses] = await Promise.all([
+    sumIncomeInRange(incomeStart, incomeEnd),
     prisma.expense.aggregate({
       _sum: { amount: true },
-      where: { createdAt: whereDate },
-    }),
-    prisma.sale.aggregate({
-      _sum: { total: true },
-      where: { createdAt: whereDate },
+      where: { date: { gte: incomeStart, lte: incomeEnd } },
     }),
   ]);
 
-  const purchaseTotal = purchases._sum.totalCost || 0;
   const expenseTotal = expenses._sum.amount || 0;
-  const salesTotal = sales._sum.total || 0;
-  const totalCost = purchaseTotal + expenseTotal;
-  const totalRevenue = salesTotal;
-  const profit = totalRevenue - totalCost;
+  const profit = income.incomeTotal - expenseTotal;
 
   return {
-    purchaseTotal,
+    incomeTotal: income.incomeTotal,
+    salesTotal: income.salesTotal,
+    otherIncomeTotal: income.otherIncomeTotal,
     expenseTotal,
-    salesTotal,
-    totalCost,
-    totalRevenue,
+    purchaseTotal: 0,
+    totalCost: expenseTotal,
+    totalRevenue: income.incomeTotal,
     profit,
   };
 }
 
 export async function GET(request: NextRequest) {
-  const gate = await requireOwner(request);
+  const gate = await requireAdmin(request);
   if (gate.response) return gate.response;
   try {
     const now = new Date();

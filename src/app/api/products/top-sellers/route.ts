@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { attachPricingToProductJson, loadActivePromotions } from "@/lib/effective-price";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const limitRaw = request.nextUrl.searchParams.get("limit");

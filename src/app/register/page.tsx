@@ -76,7 +76,7 @@ export default function RegisterPage() {
         setSubmitError(typeof data.error === "string" ? data.error : "Registration failed");
         return;
       }
-      const roleNorm = String(data.role ?? "").toUpperCase() || "SELLER";
+      const roleNorm = String(data.role ?? "").toUpperCase() || "ADMIN";
       localStorage.setItem(
         "user",
         JSON.stringify({

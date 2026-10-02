@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --shop-nav: #131921;
+  --shop-nav-mid: #232f3e;
+  --shop-accent: #febd69;
+  --shop-link: #007185;
+  --shop-bg: #eaeded;
+  --shop-text: #0f1111;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}

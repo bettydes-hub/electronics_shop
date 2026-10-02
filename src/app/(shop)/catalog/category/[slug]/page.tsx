@@ -50,21 +50,21 @@ export default function CategoryCatalogPage({ params }: { params: { slug: string
   }, [resolvedCat, locale, slugParam]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <ShopNav current="catalog" />
+    <div className="flex flex-1 flex-col bg-amazon-bg">
+      <ShopNav current="catalog" theme="dark" />
 
-      <div className="mx-auto w-full max-w-6xl px-4 pt-4">
+      <div className="w-full px-2 pt-3 sm:px-3 lg:px-4">
         <FirstSetupBanner variant="light" />
-        <nav className="mb-4 text-sm text-slate-600" aria-label="Breadcrumb">
-          <Link href="/" className="text-primary-600 hover:underline">
+        <nav className="mb-3 text-[13px] text-[#565959]" aria-label="Breadcrumb">
+          <Link href="/" className="text-amazon-link hover:underline">
             {t("navHome")}
           </Link>
           <span className="mx-2 text-slate-400">/</span>
-          <span className="text-slate-900">{title}</span>
+          <span className="text-[#0f1111]">{title}</span>
         </nav>
       </div>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-8">
+      <main className="w-full flex-1 px-2 pb-8 sm:px-3 lg:px-4">
         <ProductGrid title={`${title}`} categorySlug={slugParam} />
       </main>
     </div>

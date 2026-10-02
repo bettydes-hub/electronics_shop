@@ -11,7 +11,9 @@ import { requireAdmin } from "@/lib/require-admin";
 
 function shapeFromRow(row: {
   storeName: string;
+  storeNameAm: string | null;
   address: string;
+  addressAm: string | null;
   phone: string;
   tiktokUrl: string;
   instagramUrl: string;
@@ -20,7 +22,9 @@ function shapeFromRow(row: {
   const fallback = getShopContact();
   return {
     storeName: row.storeName.trim() || fallback.storeName,
+    storeNameAm: (row.storeNameAm ?? "").trim(),
     address: row.address.replace(/\\n/g, "\n"),
+    addressAm: (row.addressAm ?? "").replace(/\\n/g, "\n"),
     phone: row.phone.trim(),
     tiktokUrl: row.tiktokUrl.trim(),
     instagramUrl: row.instagramUrl.trim(),
@@ -65,10 +69,23 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const storeName = typeof body.storeName === "string" ? body.storeName.trim() : "";
     if (!storeName) {
-      return NextResponse.json({ error: "Store name is required" }, { status: 400 });
+      return NextResponse.json({ error: "Store name (English) is required" }, { status: 400 });
+    }
+    const storeNameAm =
+      typeof body.storeNameAm === "string" ? body.storeNameAm.trim() || null : null;
+    if (!storeNameAm) {
+      return NextResponse.json({ error: "Store name (Amharic) is required" }, { status: 400 });
     }
 
     const address = typeof body.address === "string" ? body.address : "";
+    const addressAm = typeof body.addressAm === "string" ? body.addressAm.trim() || null : null;
+    if (!address.trim()) {
+      return NextResponse.json({ error: "Address (English) is required" }, { status: 400 });
+    }
+    if (!addressAm) {
+      return NextResponse.json({ error: "Address (Amharic) is required" }, { status: 400 });
+    }
+
     const phone = typeof body.phone === "string" ? body.phone.trim() : "";
     const tiktokUrl = typeof body.tiktokUrl === "string" ? body.tiktokUrl.trim() : "";
     const instagramUrl = typeof body.instagramUrl === "string" ? body.instagramUrl.trim() : "";
@@ -97,7 +114,9 @@ export async function PUT(request: NextRequest) {
       create: {
         id: SHOP_SETTINGS_ROW_ID,
         storeName,
+        storeNameAm,
         address,
+        addressAm,
         phone,
         tiktokUrl,
         instagramUrl,
@@ -107,7 +126,9 @@ export async function PUT(request: NextRequest) {
       },
       update: {
         storeName,
+        storeNameAm,
         address,
+        addressAm,
         phone,
         tiktokUrl,
         instagramUrl,

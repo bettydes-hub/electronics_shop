@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useShopLocale } from "@/context/LocaleContext";
-import { getShopContact, phoneToTelHref, type ShopContact } from "@/lib/shop-contact";
+import {
+  getShopContact,
+  localizedShopFields,
+  phoneToTelHref,
+  type ShopContact,
+} from "@/lib/shop-contact";
 
 function IconTikTok({ className }: { className?: string }) {
   return (
@@ -30,7 +35,7 @@ function IconTelegram({ className }: { className?: string }) {
 }
 
 export function ShopCustomerFooter() {
-  const { t } = useShopLocale();
+  const { t, locale } = useShopLocale();
   const [c, setC] = useState<ShopContact>(() => getShopContact());
 
   useEffect(() => {
@@ -42,7 +47,9 @@ export function ShopCustomerFooter() {
         if (cancelled || !data || data.error || typeof data.storeName !== "string") return;
         setC({
           storeName: data.storeName,
+          storeNameAm: typeof data.storeNameAm === "string" ? data.storeNameAm : "",
           address: typeof data.address === "string" ? data.address : "",
+          addressAm: typeof data.addressAm === "string" ? data.addressAm : "",
           phone: typeof data.phone === "string" ? data.phone : "",
           tiktokUrl: typeof data.tiktokUrl === "string" ? data.tiktokUrl : "",
           instagramUrl: typeof data.instagramUrl === "string" ? data.instagramUrl : "",
@@ -57,16 +64,17 @@ export function ShopCustomerFooter() {
     };
   }, []);
 
-  const addressLines = c.address.split("\n").filter(Boolean);
+  const localized = localizedShopFields(c, locale);
+  const addressLines = localized.address.split("\n").filter(Boolean);
 
   return (
-    <footer className="relative z-20 mt-auto border-t border-primary-600/70 bg-primary-700 backdrop-blur-md">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12">
+    <footer className="relative z-20 mt-auto w-full border-t border-primary-600/70 bg-primary-700 text-white">
+      <div className="w-full px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-100">{t("footerVisitUs")}</h3>
-            <p className="mt-3 font-semibold text-white">{c.storeName}</p>
-            <address className="mt-2 not-italic text-sm leading-relaxed text-emerald-50/90">
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-emerald-100">{t("footerVisitUs")}</h3>
+            <p className="mt-3 font-semibold text-white">{localized.storeName}</p>
+            <address className="mt-2 not-italic text-[14px] leading-relaxed text-emerald-50/90">
               {addressLines.length > 0 ? (
                 addressLines.map((line, i) => (
                   <span key={i} className="block">
@@ -80,24 +88,24 @@ export function ShopCustomerFooter() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-100">{t("footerContact")}</h3>
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-emerald-100">{t("footerContact")}</h3>
             {c.phone ? (
-              <p className="mt-3">
+              <p className="mt-3 text-[14px]">
                 <span className="text-emerald-100/70">{t("footerPhone")} </span>
                 <a
                   href={phoneToTelHref(c.phone)}
-                  className="font-medium text-white underline-offset-2 transition hover:text-emerald-100 hover:underline"
+                  className="font-medium text-white underline-offset-2 hover:text-emerald-100 hover:underline"
                 >
                   {c.phone}
                 </a>
               </p>
             ) : (
-              <p className="mt-3 text-sm text-emerald-200/70">{t("footerPhonePlaceholder")}</p>
+              <p className="mt-3 text-[14px] text-emerald-200/70">{t("footerPhonePlaceholder")}</p>
             )}
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-emerald-100">{t("footerSocial")}</h3>
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-emerald-100">{t("footerSocial")}</h3>
             <ul className="mt-3 flex flex-wrap gap-3">
               {c.tiktokUrl ? (
                 <li>
@@ -139,13 +147,13 @@ export function ShopCustomerFooter() {
                 </li>
               ) : null}
               {!c.tiktokUrl && !c.instagramUrl && !c.telegramUrl ? (
-                <li className="text-sm text-emerald-200/70">{t("footerSocialPlaceholder")}</li>
+                <li className="text-[14px] text-emerald-200/70">{t("footerSocialPlaceholder")}</li>
               ) : null}
             </ul>
           </div>
         </div>
         <p className="mt-10 border-t border-primary-600/70 pt-6 text-center text-xs text-emerald-100/80">
-          © {new Date().getFullYear()} {c.storeName}
+          © {new Date().getFullYear()} {localized.storeName}
         </p>
       </div>
     </footer>

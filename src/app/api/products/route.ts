@@ -155,6 +155,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const descriptionAmTrimmed =
+      descriptionAm != null && String(descriptionAm).trim()
+        ? String(descriptionAm).trim()
+        : "";
+    if (!descriptionAmTrimmed) {
+      return NextResponse.json(
+        { error: "Amharic description is required" },
+        { status: 400 }
+      );
+    }
+    const nameAmTrimmed =
+      nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : "";
+    if (!nameAmTrimmed) {
+      return NextResponse.json(
+        { error: "Amharic name is required" },
+        { status: 400 }
+      );
+    }
+
     const urls = Array.isArray(imageUrls) && imageUrls.length > 0
       ? imageUrls.filter((u: string) => typeof u === "string" && u.trim())
       : imageUrl ? [imageUrl] : [];
@@ -189,9 +208,8 @@ export async function POST(request: NextRequest) {
       data: {
         name: String(name).trim(),
         description: description ? String(description).trim() : null,
-        nameAm: nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : null,
-        descriptionAm:
-          descriptionAm != null && String(descriptionAm).trim() ? String(descriptionAm).trim() : null,
+        nameAm: nameAmTrimmed,
+        descriptionAm: descriptionAmTrimmed,
         price: priceNum,
         costPrice: (() => {
           if (costPrice == null || costPrice === "") return null;

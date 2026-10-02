@@ -11,7 +11,7 @@ export function LanguageSwitcher({ theme = "light" }: { theme?: "light" | "dark"
     <button
       type="button"
       onClick={() => setLocale(code)}
-      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+      className={`rounded-full px-3.5 py-1.5 text-[15px] font-semibold transition ${
         locale === code
           ? dark
             ? "bg-white text-primary-700"
@@ -34,8 +34,8 @@ export function LanguageSwitcher({ theme = "light" }: { theme?: "light" | "dark"
       role="group"
       aria-label="Language"
     >
-      {btn("en", `🇺🇸 ${t("langEnglish")}`)}
-      {btn("am", `🇪🇹 ${t("langAmharic")}`)}
+      {btn("en", t("langEnglish"))}
+      {btn("am", t("langAmharic"))}
     </div>
   );
 }

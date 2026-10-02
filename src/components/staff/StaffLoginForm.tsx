@@ -34,7 +34,7 @@ export function StaffLoginForm() {
         setError(typeof data.error === "string" ? data.error : "Sign-in failed");
         return;
       }
-      const roleNorm = String(data.role ?? "").toUpperCase() || "SELLER";
+      const roleNorm = String(data.role ?? "").toUpperCase() || "ADMIN";
       localStorage.setItem(
         "user",
         JSON.stringify({

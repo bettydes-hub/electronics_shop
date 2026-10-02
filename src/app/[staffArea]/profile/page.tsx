@@ -41,8 +41,12 @@ export default function StaffProfilePage() {
   const [newPassword2, setNewPassword2] = useState("");
 
   useLayoutEffect(() => {
+    if (segment === "owner" || segment === "seller") {
+      router.replace("/admin/profile");
+      return;
+    }
     if (!area) router.replace("/catalog");
-  }, [area, router]);
+  }, [area, segment, router]);
 
   useEffect(() => {
     if (!area || gate !== "ok") return;

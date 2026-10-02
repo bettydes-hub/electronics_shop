@@ -1,36 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwnerOrSeller } from "@/lib/require-staff";
+import { requireAdmin } from "@/lib/require-staff";
+import { parseDateOnly, todayUtcDate } from "@/lib/finance-dates";
 import { parseSalesPeriod, startDateForSalesPeriod } from "@/lib/sales-period";
 
 export async function GET(request: NextRequest) {
-  const gate = await requireOwnerOrSeller(request);
+  const gate = await requireAdmin(request);
   if (gate.response) return gate.response;
   try {
     const period = parseSalesPeriod(request.nextUrl.searchParams.get("period"));
     const start = startDateForSalesPeriod(period);
 
     const sales = await prisma.sale.findMany({
-      where: start ? { createdAt: { gte: start } } : undefined,
-      include: { product: true },
-      orderBy: { createdAt: "desc" },
+      where: start
+        ? {
+            OR: [
+              { date: { gte: new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) } },
+              { createdAt: { gte: start } },
+            ],
+          }
+        : undefined,
+      include: { product: { select: { id: true, name: true, nameAm: true, stock: true, price: true } } },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     });
     return NextResponse.json(sales);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Failed to fetch sales" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch sales" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const gate = await requireOwnerOrSeller(request);
+  const gate = await requireAdmin(request);
   if (gate.response) return gate.response;
   try {
     const body = await request.json();
     const { productId, quantity, unitPrice: unitPriceRaw } = body;
+    const date = parseDateOnly(body.date) ?? todayUtcDate();
 
     if (!productId || !quantity) {
       return NextResponse.json(
@@ -73,8 +79,10 @@ export async function POST(request: NextRequest) {
 
     const [sale] = await prisma.$transaction([
       prisma.sale.create({
-        data: { productId, quantity: qty, unitPrice, total },
-        include: { product: true },
+        data: { productId, quantity: qty, unitPrice, total, date },
+        include: {
+          product: { select: { id: true, name: true, nameAm: true, stock: true, price: true } },
+        },
       }),
       prisma.product.update({
         where: { id: productId },
@@ -85,9 +93,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(sale);
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Failed to record sale" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to record sale" }, { status: 500 });
   }
 }

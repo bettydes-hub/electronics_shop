@@ -7,8 +7,6 @@ import { staffJwtPayloadFromRequest } from "@/lib/staff-session-edge";
 
 function staffAreaFromPath(pathname: string): StaffDashboardArea | null {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
-  if (pathname === "/owner" || pathname.startsWith("/owner/")) return "owner";
-  if (pathname === "/seller" || pathname.startsWith("/seller/")) return "seller";
   return null;
 }
 

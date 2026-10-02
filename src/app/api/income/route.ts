@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-staff";
-import {
-  isExpensePeriod,
-  parseDateOnly,
-  todayUtcDate,
-} from "@/lib/finance-dates";
+import { parseDateOnly, todayUtcDate } from "@/lib/finance-dates";
 
 export async function GET(request: NextRequest) {
   const gate = await requireAdmin(request);
   if (gate.response) return gate.response;
   try {
-    const expenses = await prisma.expense.findMany({
+    const rows = await prisma.dailyIncome.findMany({
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     });
-    return NextResponse.json(expenses);
+    return NextResponse.json(rows);
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to fetch expenses" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch income" }, { status: 500 });
   }
 }
 
@@ -26,34 +22,25 @@ export async function POST(request: NextRequest) {
   if (gate.response) return gate.response;
   try {
     const body = await request.json();
-    const description =
-      typeof body.description === "string" ? body.description.trim() : "";
     const amount = parseFloat(String(body.amount ?? ""));
-    const category =
-      typeof body.category === "string" ? body.category.trim() || null : null;
-    const periodVal = isExpensePeriod(body.period) ? body.period : "MONTHLY";
+    const note = typeof body.note === "string" ? body.note.trim() || null : null;
     const date = parseDateOnly(body.date) ?? todayUtcDate();
 
-    if (!description) {
-      return NextResponse.json({ error: "Description is required" }, { status: 400 });
-    }
     if (!Number.isFinite(amount) || amount < 0) {
       return NextResponse.json({ error: "A valid amount is required" }, { status: 400 });
     }
 
-    const expense = await prisma.expense.create({
+    const row = await prisma.dailyIncome.create({
       data: {
-        description,
-        amount,
-        category,
-        period: periodVal,
         date,
+        amount,
+        note,
+        createdById: gate.user.id,
       },
     });
-
-    return NextResponse.json(expense);
+    return NextResponse.json(row);
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to record expense" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to record income" }, { status: 500 });
   }
 }

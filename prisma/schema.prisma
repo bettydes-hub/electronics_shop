@@ -116,17 +116,32 @@ model Purchase {
   createdAt      DateTime @default(now())
 }
 
-// Owner: records bills and other expenses
+// Admin: records bills and other expenses
 model Expense {
   id          String   @id @default(cuid())
   description String
   amount      Float
   category    String?  // e.g. rent, electricity, etc.
-  period      String   @default("MONTHLY") // WEEKLY, MONTHLY, THREE_MONTHS, SIX_MONTHS, YEARLY — what the amount covers
+  period      String   @default("MONTHLY") // DAILY, WEEKLY, MONTHLY, THREE_MONTHS, SIX_MONTHS, YEARLY
+  date        DateTime @default(now()) @db.Date // day this expense is recorded for
   createdAt   DateTime @default(now())
+
+  @@index([date])
 }
 
-// Seller: records daily sales (reduces stock)
+/// Admin: simple daily cash received (not per-product sales)
+model DailyIncome {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  amount      Float
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([date])
+}
+
+// Admin: records product sales (reduces stock); counts toward daily income
 model Sale {
   id         String   @id @default(cuid())
   productId  String
@@ -134,7 +149,10 @@ model Sale {
   quantity   Int
   unitPrice  Float
   total      Float
+  date       DateTime @default(now()) @db.Date
   createdAt  DateTime @default(now())
+
+  @@index([date])
 }
 
 model Promotion {
@@ -223,7 +241,9 @@ model OrderItem {
 model ShopSettings {
   id           String   @id
   storeName    String
+  storeNameAm  String?  // አማርኛ store name
   address      String   @default("")
+  addressAm    String?  // አማርኛ address
   phone        String   @default("")
   tiktokUrl    String   @default("")
   instagramUrl String   @default("")

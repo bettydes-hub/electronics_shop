@@ -12,9 +12,8 @@ export type StaffUser = {
   role: string;
 };
 
-function canManageBackOffice(role: string): boolean {
-  const r = normalizeStaffRole(role);
-  return r === "ADMIN" || r === "OWNER";
+function isAdmin(role: string): boolean {
+  return normalizeStaffRole(role) === "ADMIN";
 }
 
 function tokenFromRequest(request: NextRequest): string | null {
@@ -56,51 +55,35 @@ export async function requireActiveStaff(
   };
 }
 
-/** ADMIN or OWNER — catalog defaults, staff, shop settings, promotions, etc. */
+/** ADMIN only — catalog, staff, shop settings, finance. */
 export async function requireAdmin(
   request: NextRequest
 ): Promise<{ user: StaffUser; response: null } | { user: null; response: NextResponse }> {
   const gate = await requireActiveStaff(request);
   if (gate.response) return gate;
-  if (!canManageBackOffice(gate.user.role)) {
+  if (!isAdmin(gate.user.role)) {
     return { user: null, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { user: gate.user, response: null };
 }
 
-/** OWNER only — financial dashboard, purchases, expenses, orders. */
+/** @deprecated Use requireAdmin — finance is admin-only now. */
 export async function requireOwner(
   request: NextRequest
 ): Promise<{ user: StaffUser; response: null } | { user: null; response: NextResponse }> {
-  const gate = await requireActiveStaff(request);
-  if (gate.response) return gate;
-  if (normalizeStaffRole(gate.user.role) !== "OWNER") {
-    return { user: null, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user: gate.user, response: null };
+  return requireAdmin(request);
 }
 
-/** SELLER only — floor sales UI. */
+/** @deprecated Seller role removed — use requireAdmin. */
 export async function requireSeller(
   request: NextRequest
 ): Promise<{ user: StaffUser; response: null } | { user: null; response: NextResponse }> {
-  const gate = await requireActiveStaff(request);
-  if (gate.response) return gate;
-  if (normalizeStaffRole(gate.user.role) !== "SELLER") {
-    return { user: null, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user: gate.user, response: null };
+  return requireAdmin(request);
 }
 
-/** OWNER or SELLER — sales list (owner analytics + seller tool). */
+/** @deprecated Use requireAdmin. */
 export async function requireOwnerOrSeller(
   request: NextRequest
 ): Promise<{ user: StaffUser; response: null } | { user: null; response: NextResponse }> {
-  const gate = await requireActiveStaff(request);
-  if (gate.response) return gate;
-  const r = normalizeStaffRole(gate.user.role);
-  if (r !== "OWNER" && r !== "SELLER") {
-    return { user: null, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  return { user: gate.user, response: null };
+  return requireAdmin(request);
 }

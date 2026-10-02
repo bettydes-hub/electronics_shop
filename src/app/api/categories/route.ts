@@ -24,20 +24,39 @@ export async function GET() {
         products: {
           select: { imageUrl: true, imageUrls: true },
           orderBy: { createdAt: "desc" },
-          take: 1,
+          take: 12,
         },
       },
       orderBy: { name: "asc" },
     });
+
+    function bestPreviewUrl(
+      products: { imageUrl: string | null; imageUrls: string[] }[]
+    ): string | null {
+      let best: string | null = null;
+      let bestScore = 0;
+      for (const p of products) {
+        const candidates = [
+          ...(Array.isArray(p.imageUrls) ? p.imageUrls : []),
+          ...(p.imageUrl ? [p.imageUrl] : []),
+        ].filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+        for (const url of candidates) {
+          // Prefer fuller URLs / larger data-URIs over tiny compressed thumbs
+          const score = url.length;
+          if (score > bestScore) {
+            bestScore = score;
+            best = url;
+          }
+        }
+      }
+      return best;
+    }
+
     const categoriesWithPreview = categories.map((c) => {
-      const first = c.products[0];
-      const previewImageUrl =
-        first?.imageUrls && first.imageUrls.length > 0
-          ? first.imageUrls[0]
-          : first?.imageUrl ?? null;
+      const { products, ...rest } = c;
       return {
-        ...c,
-        previewImageUrl,
+        ...rest,
+        previewImageUrl: bestPreviewUrl(products),
       };
     });
     return NextResponse.json(categoriesWithPreview);

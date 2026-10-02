@@ -1,6 +1,6 @@
 import { normalizeStaffRole } from "@/lib/staff-session";
 
-export type StaffDashboardArea = "admin" | "owner" | "seller";
+export type StaffDashboardArea = "admin";
 
 function pathOnly(url: string): string {
   const i = url.indexOf("?");
@@ -11,8 +11,6 @@ function pathOnly(url: string): string {
 export function dashboardPathForRole(role: string | null): string {
   const r = normalizeStaffRole(role);
   if (r === "ADMIN") return "/admin";
-  if (r === "OWNER") return "/owner";
-  if (r === "SELLER") return "/seller";
   return "/catalog";
 }
 
@@ -20,14 +18,12 @@ export function dashboardPathForRole(role: string | null): string {
 export function profilePathForRole(role: string | null): string {
   const r = normalizeStaffRole(role);
   if (r === "ADMIN") return "/admin/profile";
-  if (r === "OWNER") return "/owner/profile";
-  if (r === "SELLER") return "/seller/profile";
   return "/catalog";
 }
 
 export function parseStaffArea(segment: string): StaffDashboardArea | null {
   const s = segment.toLowerCase();
-  if (s === "admin" || s === "owner" || s === "seller") return s;
+  if (s === "admin") return s;
   return null;
 }
 
@@ -41,8 +37,7 @@ export function sessionMayAccessStaffArea(
   const r = normalizeStaffRole(sessionRole);
   if (!r) return false;
   if (area === "admin") return r === "ADMIN";
-  if (area === "owner") return r === "OWNER";
-  return r === "SELLER";
+  return false;
 }
 
 function roleMayAccessPathPrefix(role: string | null, pathNoQuery: string): boolean {
@@ -51,17 +46,6 @@ function roleMayAccessPathPrefix(role: string | null, pathNoQuery: string): bool
   if (pathNoQuery === "/admin" || pathNoQuery.startsWith("/admin/")) {
     return r === "ADMIN";
   }
-  if (pathNoQuery === "/owner" || pathNoQuery.startsWith("/owner/")) {
-    return r === "OWNER";
-  }
-  if (pathNoQuery === "/seller" || pathNoQuery.startsWith("/seller/")) {
-    return r === "SELLER";
-  }
-  if (pathNoQuery === "/hub" || pathNoQuery.startsWith("/hub/")) return true;
-  if (pathNoQuery === "/catalog" || pathNoQuery.startsWith("/catalog/")) return true;
-  if (pathNoQuery === "/cart" || pathNoQuery.startsWith("/cart/")) return true;
-  if (pathNoQuery === "/checkout" || pathNoQuery.startsWith("/checkout/")) return true;
-  if (pathNoQuery === "/customer" || pathNoQuery.startsWith("/customer/")) return true;
   if (
     pathNoQuery.startsWith("/login") ||
     pathNoQuery.startsWith("/register") ||
@@ -71,6 +55,7 @@ function roleMayAccessPathPrefix(role: string | null, pathNoQuery: string): bool
   ) {
     return true;
   }
+  if (pathNoQuery === "/catalog" || pathNoQuery.startsWith("/catalog/")) return true;
   return false;
 }
 
@@ -78,22 +63,16 @@ function roleMayAccessPathPrefix(role: string | null, pathNoQuery: string): bool
  * After login, validate `next` so users cannot jump into another role's URLs.
  * Preserves query string when the path is allowed.
  */
-export function safeNextPathAfterLogin(next: string | null | undefined, role: string): string {
-  const home = dashboardPathForRole(role);
-  if (!next || typeof next !== "string" || !next.startsWith("/") || next.startsWith("//")) {
-    return home;
-  }
-  const r = normalizeStaffRole(role);
-  if (!r) return home;
-
-  const po = pathOnly(next);
-
-  if (po === "/profile" || po.startsWith("/profile/")) {
-    return profilePathForRole(r);
-  }
-
-  if (roleMayAccessPathPrefix(r, po)) {
-    return next;
-  }
-  return home;
+/**
+ * After login, validate `next` so users cannot jump into disallowed URLs.
+ * Call as safeNextPathAfterLogin(nextParam, role).
+ */
+export function safeNextPathAfterLogin(nextRaw: string | null | undefined, role: string | null): string {
+  const fallback = dashboardPathForRole(role);
+  if (!nextRaw || typeof nextRaw !== "string") return fallback;
+  const trimmed = nextRaw.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return fallback;
+  const path = pathOnly(trimmed);
+  if (!roleMayAccessPathPrefix(role, path)) return fallback;
+  return trimmed;
 }

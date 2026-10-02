@@ -13,6 +13,7 @@ import {
 import { StaffDashboardGateFallback, useStaffDashboardGate } from "@/lib/staff-dashboard-gate";
 import { canManageStaff, readStaffSession } from "@/lib/staff-session";
 import { StaffNavSession } from "@/components/staff/StaffNavSession";
+import { AdminFinancePanel } from "@/components/admin/AdminFinancePanel";
 
 type Product = {
   id: string;
@@ -47,12 +48,13 @@ type StaffRow = {
   createdAt: string;
 };
 
-type Tab = "products" | "categories" | "staff" | "store";
+type Tab = "products" | "categories" | "finance" | "staff" | "store";
 
 const TAB_LABELS: Record<Tab, string> = {
   products: "Products",
   categories: "Categories",
-  staff: "Staff",
+  finance: "Finance",
+  staff: "Admins",
   store: "Store & footer",
 };
 
@@ -107,7 +109,9 @@ export default function AdminPage() {
   const [productNewCategory, setProductNewCategory] = useState<Record<string, string>>({});
   const [storeForm, setStoreForm] = useState({
     storeName: "",
+    storeNameAm: "",
     address: "",
+    addressAm: "",
     phone: "",
     tiktokUrl: "",
     instagramUrl: "",
@@ -123,7 +127,7 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [userForm, setUserForm] = useState({
     email: "",
-    role: "SELLER",
+    role: "ADMIN",
   });
   const [resendingUserId, setResendingUserId] = useState<string | null>(null);
 
@@ -181,7 +185,9 @@ export default function AdminPage() {
         if (cancelled || data?.error) return;
         setStoreForm({
           storeName: typeof data.storeName === "string" ? data.storeName : "",
+          storeNameAm: typeof data.storeNameAm === "string" ? data.storeNameAm : "",
           address: typeof data.address === "string" ? data.address : "",
+          addressAm: typeof data.addressAm === "string" ? data.addressAm : "",
           phone: typeof data.phone === "string" ? data.phone : "",
           tiktokUrl: typeof data.tiktokUrl === "string" ? data.tiktokUrl : "",
           instagramUrl: typeof data.instagramUrl === "string" ? data.instagramUrl : "",
@@ -306,14 +312,22 @@ export default function AdminPage() {
       );
       return;
     }
+    if (!form.descriptionAm.trim()) {
+      showMsg("products", "error", "Amharic description is required");
+      return;
+    }
+    if (!form.nameAm.trim()) {
+      showMsg("products", "error", "Amharic name is required");
+      return;
+    }
     const categoryValue = form.categoryId
       ? categories.find((c) => c.id === form.categoryId)?.name || null
       : form.category?.trim() || null;
     const payload: Record<string, unknown> = {
       name: form.name,
       description: form.description || null,
-      nameAm: form.nameAm.trim() || null,
-      descriptionAm: form.descriptionAm.trim() || null,
+      nameAm: form.nameAm.trim(),
+      descriptionAm: form.descriptionAm.trim(),
       price: parseFloat(form.price) || 0,
       costPrice: form.costPrice ? parseFloat(form.costPrice) : null,
       category: categoryValue,
@@ -390,7 +404,7 @@ export default function AdminPage() {
     }
     const session = readStaffSession();
     if (!session.id || !canManageStaff(session.role)) {
-      showMsg("staff", "error", "Admin or Owner sign-in required.");
+      showMsg("staff", "error", "Admin sign-in required.");
       return;
     }
     try {
@@ -399,7 +413,7 @@ export default function AdminPage() {
         method: "POST",
         body: JSON.stringify({
           email: userForm.email.trim(),
-          role: userForm.role,
+          role: "ADMIN",
         }),
       });
       const data = await res.json();
@@ -411,7 +425,7 @@ export default function AdminPage() {
       }
       setUserForm({
         email: "",
-        role: "SELLER",
+        role: "ADMIN",
       });
       fetchAll();
     } catch (err) {
@@ -422,7 +436,7 @@ export default function AdminPage() {
   const handleResendInvite = async (userId: string) => {
     const session = readStaffSession();
     if (!session.id || !canManageStaff(session.role)) {
-      showMsg("staff", "error", "Admin or Owner sign-in required.");
+      showMsg("staff", "error", "Admin sign-in required.");
       return;
     }
     setResendingUserId(userId);
@@ -445,7 +459,7 @@ export default function AdminPage() {
     if (!confirm("Remove this staff account?")) return;
     const session = readStaffSession();
     if (!session.id || !canManageStaff(session.role)) {
-      showMsg("staff", "error", "Admin or Owner sign-in required to remove staff.");
+      showMsg("staff", "error", "Admin sign-in required to remove staff.");
       return;
     }
     try {
@@ -463,7 +477,7 @@ export default function AdminPage() {
     e.preventDefault();
     const session = readStaffSession();
     if (!session.id || !canManageStaff(session.role)) {
-      showMsg("store", "error", "Admin or Owner sign-in required.");
+      showMsg("store", "error", "Admin sign-in required.");
       return;
     }
     setStoreSaving(true);
@@ -473,7 +487,9 @@ export default function AdminPage() {
         method: "PUT",
         body: JSON.stringify({
           storeName: storeForm.storeName,
+          storeNameAm: storeForm.storeNameAm,
           address: storeForm.address,
+          addressAm: storeForm.addressAm,
           phone: storeForm.phone,
           tiktokUrl: storeForm.tiktokUrl,
           instagramUrl: storeForm.instagramUrl,
@@ -486,7 +502,9 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error || "Save failed");
       setStoreForm({
         storeName: typeof data.storeName === "string" ? data.storeName : "",
+        storeNameAm: typeof data.storeNameAm === "string" ? data.storeNameAm : "",
         address: typeof data.address === "string" ? data.address : "",
+        addressAm: typeof data.addressAm === "string" ? data.addressAm : "",
         phone: typeof data.phone === "string" ? data.phone : "",
         tiktokUrl: typeof data.tiktokUrl === "string" ? data.tiktokUrl : "",
         instagramUrl: typeof data.instagramUrl === "string" ? data.instagramUrl : "",
@@ -660,7 +678,7 @@ export default function AdminPage() {
         <h1 className="mb-6 text-2xl font-bold text-slate-900">Admin Panel</h1>
 
         <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200">
-          {(["products", "categories", "staff", "store"] as Tab[]).map((tab) => (
+          {(["products", "categories", "finance", "staff", "store"] as Tab[]).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -676,7 +694,12 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {loading ? (
+        {activeTab === "finance" ? (
+          <div>
+            <AdminTabFlash flash={flash} tab="finance" />
+            <AdminFinancePanel onFlash={(type, text) => showMsg("finance", type, text)} />
+          </div>
+        ) : loading ? (
           <p className="text-slate-500">Loading...</p>
         ) : (
           <>
@@ -704,13 +727,14 @@ export default function AdminPage() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium">Name (አማርኛ)</label>
+                        <label className="mb-1 block text-sm font-medium">Name (አማርኛ) *</label>
                         <input
                           type="text"
+                          required
                           value={form.nameAm}
                           onChange={(e) => setForm((f) => ({ ...f, nameAm: e.target.value }))}
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                          placeholder="Optional"
+                          placeholder="Required"
                         />
                       </div>
                       <div>
@@ -734,13 +758,14 @@ export default function AdminPage() {
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="mb-1 block text-sm font-medium">Description (አማርኛ)</label>
+                        <label className="mb-1 block text-sm font-medium">Description (አማርኛ) *</label>
                         <textarea
                           value={form.descriptionAm}
                           onChange={(e) => setForm((f) => ({ ...f, descriptionAm: e.target.value }))}
                           rows={2}
+                          required
                           className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                          placeholder="Optional"
+                          placeholder="Required"
                         />
                       </div>
                       <div>
@@ -1016,7 +1041,10 @@ export default function AdminPage() {
                   onSubmit={handleUserSubmit}
                   className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
                 >
-                  <h3 className="mb-2 font-semibold">Invite staff</h3>
+                  <h3 className="mb-2 font-semibold">Invite admin</h3>
+                  <p className="mb-4 text-sm text-slate-600">
+                    They will receive an email to create a username and password.
+                  </p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-sm font-medium">Email *</label>
@@ -1030,16 +1058,13 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Role *</label>
-                      <select
-                        value={userForm.role}
-                        onChange={(e) => setUserForm((f) => ({ ...f, role: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2"
-                      >
-                        <option value="OWNER">Owner</option>
-                        <option value="SELLER">Seller</option>
-                        <option value="ADMIN">Admin</option>
-                      </select>
+                      <label className="mb-1 block text-sm font-medium">Role</label>
+                      <input
+                        type="text"
+                        value="Admin"
+                        disabled
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-600"
+                      />
                     </div>
                   </div>
                   <button
@@ -1053,7 +1078,7 @@ export default function AdminPage() {
 
                 <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
                   <h3 className="border-b border-slate-200 px-6 py-4 font-semibold">
-                    Staff ({users.length})
+                    Admins ({users.length})
                   </h3>
                   {users.length === 0 ? (
                     <div className="p-8 text-center text-slate-500">No staff yet.</div>
@@ -1129,7 +1154,7 @@ export default function AdminPage() {
                   <h3 className="mb-2 font-semibold">Store & customer footer</h3>
                   <div className="grid max-w-2xl gap-4">
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Store name *</label>
+                      <label className="mb-1 block text-sm font-medium">Store name (English) *</label>
                       <input
                         type="text"
                         required
@@ -1139,12 +1164,34 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Address</label>
+                      <label className="mb-1 block text-sm font-medium">Store name (አማርኛ) *</label>
+                      <input
+                        type="text"
+                        required
+                        value={storeForm.storeNameAm}
+                        onChange={(e) => setStoreForm((f) => ({ ...f, storeNameAm: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Address (English) *</label>
                       <textarea
                         value={storeForm.address}
                         onChange={(e) => setStoreForm((f) => ({ ...f, address: e.target.value }))}
                         rows={4}
+                        required
                         placeholder="Street, building, city (one line or many)"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Address (አማርኛ) *</label>
+                      <textarea
+                        value={storeForm.addressAm}
+                        onChange={(e) => setStoreForm((f) => ({ ...f, addressAm: e.target.value }))}
+                        rows={4}
+                        required
+                        placeholder="አድራሻ በአማርኛ"
                         className="w-full rounded-lg border border-slate-300 px-3 py-2"
                       />
                     </div>

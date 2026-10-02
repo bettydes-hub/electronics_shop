@@ -53,11 +53,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
 
-    const { passwordHash: _, ...safe } = user;
-    await setStaffSessionCookieInRouteHandler(user.id, String(safe.role));
+    let role = String(user.role).toUpperCase();
+    if (role === "OWNER" || role === "SELLER") {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { role: "ADMIN" },
+      });
+      role = "ADMIN";
+    }
+
+    await setStaffSessionCookieInRouteHandler(user.id, role);
     return NextResponse.json({
-      ...safe,
-      role: String(safe.role),
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      role,
     });
   } catch (e) {
     console.error(e);

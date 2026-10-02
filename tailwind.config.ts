@@ -8,6 +8,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        shop: [
+          "var(--font-shop-sans)",
+          "var(--font-shop-ethiopic)",
+          "Segoe UI",
+          "Tahoma",
+          "sans-serif",
+        ],
+      },
       colors: {
         primary: {
           50: "#ecfdf5",
@@ -16,6 +25,13 @@ const config: Config = {
           500: "#10b981",
           600: "#059669",
           700: "#047857",
+        },
+        amazon: {
+          nav: "#131921",
+          mid: "#232f3e",
+          accent: "#febd69",
+          link: "#007185",
+          bg: "#eaeded",
         },
       },
       keyframes: {

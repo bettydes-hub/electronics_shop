@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireOwner } from "@/lib/require-staff";
+import { requireAdmin } from "@/lib/require-staff";
+import { sumAllIncome } from "@/lib/finance-income";
 
 export async function GET(request: NextRequest) {
-  const gate = await requireOwner(request);
+  const gate = await requireAdmin(request);
   if (gate.response) return gate.response;
   try {
-    const [purchases, expenses, sales] = await Promise.all([
-      prisma.purchase.aggregate({ _sum: { totalCost: true } }),
+    const [income, expenses] = await Promise.all([
+      sumAllIncome(),
       prisma.expense.aggregate({ _sum: { amount: true } }),
-      prisma.sale.aggregate({ _sum: { total: true } }),
     ]);
 
-    const totalCost =
-      (purchases._sum.totalCost || 0) + (expenses._sum.amount || 0);
-    const salesTotal = sales._sum.total || 0;
-    const totalRevenue = salesTotal;
-    const profit = totalRevenue - totalCost;
+    const expenseTotal = expenses._sum.amount || 0;
+    const profit = income.incomeTotal - expenseTotal;
 
     return NextResponse.json({
-      totalCost,
-      totalRevenue,
+      incomeTotal: income.incomeTotal,
+      salesTotal: income.salesTotal,
+      otherIncomeTotal: income.otherIncomeTotal,
+      expenseTotal,
+      totalRevenue: income.incomeTotal,
+      totalCost: expenseTotal,
       profit,
-      purchaseTotal: purchases._sum.totalCost || 0,
-      expenseTotal: expenses._sum.amount || 0,
-      salesTotal,
+      purchaseTotal: 0,
     });
   } catch (error) {
     console.error(error);

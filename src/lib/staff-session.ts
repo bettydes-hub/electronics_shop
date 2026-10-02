@@ -22,10 +22,9 @@ export function normalizeStaffRole(raw: unknown): string | null {
   return null;
 }
 
-/** ADMIN and OWNER can manage staff and store settings. Sellers cannot. */
+/** ADMIN can manage staff and store settings. */
 export function canManageStaff(role: string | null): boolean {
-  const r = normalizeStaffRole(role);
-  return r === "ADMIN" || r === "OWNER";
+  return normalizeStaffRole(role) === "ADMIN";
 }
 
 export function readStaffSession(): StaffSessionInfo {

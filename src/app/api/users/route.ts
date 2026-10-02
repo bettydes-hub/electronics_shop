@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { createInviteCodeAndSendEmail } from "@/lib/staff-invite";
 
-const ROLES = ["OWNER", "SELLER", "ADMIN"] as const;
+const ROLES = ["ADMIN"] as const;
 type StaffRole = (typeof ROLES)[number];
 
 function isStaffRole(v: unknown): v is StaffRole {
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
     if (!isStaffRole(role)) {
       return NextResponse.json(
-        { error: "Role must be OWNER, SELLER, or ADMIN" },
+        { error: "Role must be ADMIN" },
         { status: 400 }
       );
     }

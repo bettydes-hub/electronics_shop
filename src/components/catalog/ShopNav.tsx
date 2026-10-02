@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/context/CartContext";
 import { useShopLocale } from "@/context/LocaleContext";
 import { LanguageSwitcher } from "@/components/catalog/LanguageSwitcher";
 import { categoryDisplayName } from "@/lib/category-i18n";
@@ -29,15 +28,13 @@ function suggestionCategoryLabel(item: SearchSuggestion, loc: ShopLocale): strin
 
 export function ShopNav({
   current,
-  theme = "light",
+  theme = "dark",
 }: {
   current?: "home" | "catalog" | "other";
   theme?: Theme;
 }) {
-  const { totalItems } = useCart();
   const { locale, t } = useShopLocale();
   const router = useRouter();
-  const dark = theme === "dark";
   const [search, setSearch] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [suggestOpen, setSuggestOpen] = useState(false);
@@ -51,7 +48,7 @@ export function ShopNav({
         if (cancelled) return;
         setCategories(
           Array.isArray(data)
-            ? data.slice(0, 5).map((c: { id: string; name: string; nameAm?: string | null; slug?: string | null }) => ({
+            ? data.slice(0, 8).map((c: { id: string; name: string; nameAm?: string | null; slug?: string | null }) => ({
                 id: String(c.id),
                 name: String(c.name),
                 nameAm: typeof c.nameAm === "string" ? c.nameAm : null,
@@ -127,47 +124,47 @@ export function ShopNav({
   };
 
   return (
-    <nav className={dark ? "border-b border-primary-800/50 bg-primary-700" : "border-b border-slate-200 bg-white"}>
-      <div className={dark ? "border-b border-primary-600/70 bg-primary-600/90" : "border-b border-slate-200 bg-slate-50"}>
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-3 px-4 py-2 text-xs">
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <LanguageSwitcher theme={dark ? "dark" : "light"} />
-          </div>
-        </div>
+    <nav className="w-full bg-primary-700 text-white">
+      <div className="flex w-full flex-wrap items-center justify-end gap-3 border-b border-primary-600/70 bg-primary-600/90 px-3 py-2.5 text-emerald-50">
+        <LanguageSwitcher theme="dark" />
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-3 px-4 py-4 md:grid-cols-[auto_1fr_auto] md:items-center">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            aria-label="Grace home"
-            className={`text-4xl font-black italic leading-none tracking-tight transition-colors ${
-              dark ? "text-white hover:text-teal-100" : "text-primary-600 hover:text-primary-700"
-            }`}
-          >
-            <span>Grac</span>
-            <span className={dark ? "text-primary-300" : "text-primary-500"}>e</span>
-          </Link>
-        </div>
+      <div className="flex w-full flex-wrap items-center gap-3 px-3 pb-3.5 pt-3 md:flex-nowrap">
+        <Link
+          href="/"
+          aria-label="Grace home"
+          className="shrink-0 text-[32px] font-bold italic leading-none tracking-tight text-white hover:text-teal-100"
+        >
+          <span>Grac</span>
+          <span className="text-primary-300">e</span>
+        </Link>
 
-        <form onSubmit={onSearchSubmit} className="relative w-full">
+        <form onSubmit={onSearchSubmit} className="relative min-w-0 flex-1">
           <label htmlFor="shop-nav-search" className="sr-only">
             {t("searchProductsLabel")}
           </label>
-          <input
-            id="shop-nav-search"
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onFocus={() => setSuggestOpen(suggestions.length > 0)}
-            onBlur={() => {
-              window.setTimeout(() => setSuggestOpen(false), 120);
-            }}
-            placeholder={t("searchPlaceholderNav")}
-            className="w-full rounded-full border border-transparent bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-400/40"
-          />
+          <div className="flex overflow-hidden rounded-md shadow-sm">
+            <input
+              id="shop-nav-search"
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setSuggestOpen(suggestions.length > 0)}
+              onBlur={() => {
+                window.setTimeout(() => setSuggestOpen(false), 120);
+              }}
+              placeholder={t("searchPlaceholderNav")}
+              className="min-w-0 flex-1 border-0 px-4 py-3.5 text-[17px] leading-normal text-[#0f1111] outline-none placeholder:text-[16px] placeholder:text-slate-500"
+            />
+            <button
+              type="submit"
+              className="shrink-0 bg-primary-500 px-5 text-[16px] font-semibold text-white hover:bg-primary-400"
+            >
+              {t("productSearchLabel")}
+            </button>
+          </div>
           {suggestOpen && (
-            <ul className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-slate-200 bg-white text-[#0f1111] shadow-xl">
               {suggestions.map((item) => {
                 const catLabel = suggestionCategoryLabel(item, locale);
                 return (
@@ -184,13 +181,13 @@ export function ShopNav({
                         setSuggestOpen(false);
                         router.push(`/catalog/${item.id}`);
                       }}
-                      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left hover:bg-primary-50"
+                      className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left hover:bg-primary-50"
                     >
-                      <span className="truncate text-sm text-slate-900">
+                      <span className="truncate text-[16px]">
                         {productDisplayName({ name: item.name, nameAm: item.nameAm }, locale)}
                       </span>
                       {catLabel ? (
-                        <span className="shrink-0 text-xs text-slate-500">{catLabel}</span>
+                        <span className="shrink-0 text-[13px] text-slate-500">{catLabel}</span>
                       ) : null}
                     </button>
                   </li>
@@ -199,37 +196,25 @@ export function ShopNav({
             </ul>
           )}
         </form>
-
-        <Link
-          href="/cart"
-          className={`relative inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 font-medium transition-colors ${
-            dark ? "text-emerald-50 hover:bg-primary-600 hover:text-white" : "text-slate-600 hover:bg-slate-100"
-          }`}
-        >
-          {t("navCart")}
-          {totalItems > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white">
-              {totalItems}
-            </span>
-          )}
-        </Link>
       </div>
 
-      <div className={dark ? "border-t border-primary-600/80 bg-primary-700" : "border-t border-slate-200 bg-white"}>
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4 py-2 text-sm font-medium">
+      <div className="w-full border-t border-primary-600/80 bg-primary-700">
+        <div className="flex w-full flex-wrap items-center gap-1 px-2 py-2.5 text-[17px] font-semibold text-emerald-50">
           <Link
             href="/"
-            className={`rounded-lg px-3 py-1.5 transition-colors ${
-              dark
-                ? current === "home"
-                  ? "bg-primary-600 text-white"
-                  : "text-emerald-100 hover:bg-primary-600/70 hover:text-white"
-                : current === "home"
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-slate-600 hover:bg-slate-100"
+            className={`rounded-md px-3.5 py-2 transition-colors hover:bg-primary-600 hover:text-white ${
+              current === "home" ? "bg-primary-600 text-white" : ""
             }`}
           >
             {t("navHome")}
+          </Link>
+          <Link
+            href="/catalog"
+            className={`rounded-md px-3.5 py-2 transition-colors hover:bg-primary-600 hover:text-white ${
+              current === "catalog" ? "bg-primary-600 text-white" : ""
+            }`}
+          >
+            {t("browseProducts")}
           </Link>
           {categories.map((c) => {
             const pathSlug = categoryPathSlug(c.name, c.slug);
@@ -237,14 +222,9 @@ export function ShopNav({
               <Link
                 key={c.id}
                 href={`/catalog/category/${encodeURIComponent(pathSlug)}`}
-                className={`rounded-lg px-3 py-1.5 transition-colors ${
-                  dark ? "text-emerald-100 hover:bg-primary-600/70 hover:text-white" : "text-slate-600 hover:bg-slate-100"
-                }`}
+                className="rounded-md px-3.5 py-2 transition-colors hover:bg-primary-600 hover:text-white"
               >
-                {categoryDisplayName(
-                  { name: c.name, nameAm: c.nameAm },
-                  locale
-                )}
+                {categoryDisplayName({ name: c.name, nameAm: c.nameAm }, locale)}
               </Link>
             );
           })}

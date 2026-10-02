@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useCart } from "@/context/CartContext";
 import { useShopLocale } from "@/context/LocaleContext";
 import { CatalogProduct, ProductCard } from "@/components/catalog/ProductCard";
 
@@ -38,7 +37,6 @@ export function ProductGrid({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const { addItem } = useCart();
   const heading = title ?? t("productCatalog");
 
   useEffect(() => {
@@ -79,12 +77,12 @@ export function ProductGrid({
 
   return (
     <section className={className}>
-      <div className="mb-6 flex flex-col gap-4">
-        <h2 className="text-2xl font-bold text-slate-900">{heading}</h2>
+      <div className="mb-4 flex flex-col gap-3">
+        <h2 className="text-[21px] font-bold text-[#0f1111]">{heading}</h2>
 
         {showSearch && (
-          <div className="flex flex-col gap-2 sm:max-w-xl">
-            <label htmlFor="product-search" className="text-sm font-medium text-slate-600">
+          <div className="flex w-full flex-col gap-1 sm:max-w-2xl">
+            <label htmlFor="product-search" className="text-[13px] font-medium text-[#565959]">
               {t("productSearchLabel")}
             </label>
             <input
@@ -94,21 +92,21 @@ export function ProductGrid({
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("productSearchPlaceholder")}
               autoComplete="off"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              className="w-full border border-[#d5d9d9] bg-white px-3 py-2 text-[15px] text-[#0f1111] outline-none focus:border-[#007185] focus:shadow-[0_0_0_3px_rgba(0,113,133,0.2)]"
             />
           </div>
         )}
       </div>
 
       {loading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-80 animate-pulse rounded-xl bg-slate-200" />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="aspect-[4/5] animate-pulse bg-white" />
           ))}
         </div>
       ) : products.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
-          <p className="text-slate-600">{emptyMessage}</p>
+        <div className="bg-white p-12 text-center">
+          <p className="text-[#565959]">{emptyMessage}</p>
           {debouncedSearch.trim() && (
             <button
               type="button"
@@ -116,18 +114,18 @@ export function ProductGrid({
                 setSearch("");
                 setDebouncedSearch("");
               }}
-              className="mt-3 text-sm font-medium text-primary-600 hover:underline"
+              className="mt-3 text-[14px] font-medium text-amazon-link hover:underline"
             >
               {t("clearSearch")}
             </button>
           )}
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {products.map((p) => {
             const imgs =
               p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls : p.imageUrl ? [p.imageUrl] : [];
-            return <ProductCard key={p.id} product={p} images={imgs} addItem={addItem} />;
+            return <ProductCard key={p.id} product={p} images={imgs} />;
           })}
         </div>
       )}
@@ -137,16 +135,15 @@ export function ProductGrid({
 
 type FeaturedProductsProps = { className?: string };
 
-/** Homepage strip: top-selling products recorded by seller sales. */
+/** Homepage strip: recent / featured catalog products. */
 export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
   const { t } = useShopLocale();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/products/top-sellers?limit=8")
+    fetch("/api/products?limit=8")
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
@@ -165,28 +162,24 @@ export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
 
   if (loading) {
     return (
-      <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
+      <div className={`grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 ${className}`}>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-72 animate-pulse rounded-xl bg-slate-200" />
+          <div key={i} className="aspect-[4/5] animate-pulse bg-[#f0f2f2]" />
         ))}
       </div>
     );
   }
 
   if (products.length === 0) {
-    return (
-      <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-        {t("noFeaturedProducts")}
-      </p>
-    );
+    return <p className="p-8 text-center text-[#565959]">{t("noFeaturedProducts")}</p>;
   }
 
   return (
-    <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${className}`}>
+    <div className={`grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 ${className}`}>
       {products.map((p) => {
         const imgs =
           p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls : p.imageUrl ? [p.imageUrl] : [];
-        return <ProductCard key={p.id} product={p} images={imgs} addItem={addItem} />;
+        return <ProductCard key={p.id} product={p} images={imgs} />;
       })}
     </div>
   );

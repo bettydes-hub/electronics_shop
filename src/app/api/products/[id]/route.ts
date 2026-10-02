@@ -42,6 +42,26 @@ export async function PUT(
     const { name, description, nameAm, descriptionAm, price, costPrice, category, imageUrl, imageUrls, stock } =
       body;
 
+    if (descriptionAm !== undefined) {
+      const am = descriptionAm != null && String(descriptionAm).trim() ? String(descriptionAm).trim() : "";
+      if (!am) {
+        return NextResponse.json(
+          { error: "Amharic description is required" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (nameAm !== undefined) {
+      const amName = nameAm != null && String(nameAm).trim() ? String(nameAm).trim() : "";
+      if (!amName) {
+        return NextResponse.json(
+          { error: "Amharic name is required" },
+          { status: 400 }
+        );
+      }
+    }
+
     let resolvedCategoryId: string | null | "skip" = "skip";
     if (category !== undefined) {
       const categoryStr = category ? String(category).trim() : null;
