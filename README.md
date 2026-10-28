@@ -24,11 +24,12 @@ A web-based electronics shopping system: customers browse and order products; st
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 + React + TypeScript + Tailwind CSS
-- **Backend**: Next.js API Routes
+- **Frontend** (`frontend/`): Next.js 14 + React + TypeScript + Tailwind CSS, port 3000
+- **Backend** (`backend/`): Next.js API routes, Prisma, port 4000
 - **Database**: PostgreSQL
 - **Image Storage**: Cloudinary
-- **Hosting**: Vercel (recommended)
+
+The shop UI calls `/api/...` on port 3000. The frontend proxies those requests to the backend, so login cookies stay on the shop origin.
 
 ## Getting Started
 
@@ -41,14 +42,12 @@ npm install
 
 ### 2. Set up environment variables
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `frontend/.env` and `backend/.env`, then fill in your values.
 
-```bash
-cp .env.example .env
-```
-
-- **DATABASE_URL**: PostgreSQL connection string, e.g. `postgresql://user:password@localhost:5432/electronics_shop`
-- **Cloudinary**: Sign up at [cloudinary.com](https://cloudinary.com) (free tier) and add your credentials
+- **DATABASE_URL** (backend): PostgreSQL connection string, e.g. `postgresql://user:password@localhost:5432/electronics_shop`
+- **Cloudinary** (backend): Sign up at [cloudinary.com](https://cloudinary.com) (free tier) and add your credentials
+- **BACKEND_URL** (frontend): `http://localhost:4000`
+- **FRONTEND_ORIGIN** (backend): `http://localhost:3000`
 
 ### 3. Initialize the database
 
@@ -56,13 +55,15 @@ cp .env.example .env
 npm run db:push
 ```
 
-### 4. Run the development server
+### 4. Run both servers
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) for the shop. The API is at [http://localhost:4000](http://localhost:4000).
+
+Run one side only with `npm run dev:frontend` or `npm run dev:backend`.
 
 ## Pages
 
@@ -75,5 +76,5 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **/admin** — Product management: add/edit products, upload images
 
 ## Production
-- Deploy to Vercel: `vercel`
-- Add proper authentication for owner/seller/admin
+
+Deploy `frontend` and `backend` as two services. Point `BACKEND_URL` at the API and `FRONTEND_ORIGIN` at the shop URL. Set `NEXT_PUBLIC_APP_URL` to the public shop URL so password-reset emails use that host.

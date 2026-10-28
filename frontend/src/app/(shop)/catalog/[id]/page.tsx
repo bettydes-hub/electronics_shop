@@ -133,7 +133,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 <img
                   src={mainImg}
                   alt={displayName}
-                  className="absolute inset-0 h-full w-full object-cover object-center"
+                  className="absolute inset-0 h-full w-full object-contain object-center"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-6xl text-slate-300">—</div>

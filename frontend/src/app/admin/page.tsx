@@ -227,45 +227,6 @@ export default function AdminPage() {
     });
   };
 
-  const compressAndGetDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = document.createElement("img");
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const canvas = document.createElement("canvas");
-        const maxSize = 800;
-        let { width, height } = img;
-        if (width > maxSize || height > maxSize) {
-          if (width > height) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          } else {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error("Compress failed"));
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(new Error("Failed to read"));
-            reader.readAsDataURL(blob);
-          },
-          "image/jpeg",
-          0.7
-        );
-      };
-      img.onerror = () => reject(new Error("Invalid image"));
-      img.src = url;
-    });
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length === 0) return;
@@ -280,10 +241,11 @@ export default function AdminPage() {
     const newUrls: string[] = [];
     for (const file of toAdd) {
       try {
-        const dataUrl = file.type.startsWith("image/")
-          ? await compressAndGetDataUrl(file)
-          : await fileToDataUrl(file);
-        newUrls.push(dataUrl);
+        if (!file.type.startsWith("image/")) {
+          showMsg("products", "error", "Please choose an image file");
+          break;
+        }
+        newUrls.push(await fileToDataUrl(file));
       } catch (err) {
         showMsg("products", "error", err instanceof Error ? err.message : "Upload failed");
         break;

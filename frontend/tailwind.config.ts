@@ -16,6 +16,12 @@ const config: Config = {
           "Tahoma",
           "sans-serif",
         ],
+        display: [
+          "var(--font-shop-display)",
+          "var(--font-shop-ethiopic)",
+          "Georgia",
+          "serif",
+        ],
       },
       colors: {
         primary: {

@@ -1,0 +1,50 @@
+/** Customer-facing store contact. Default: NEXT_PUBLIC_* in .env; footer loads overrides from GET /api/shop-settings. */
+
+export type ShopContact = {
+  storeName: string;
+  storeNameAm: string;
+  address: string;
+  addressAm: string;
+  phone: string;
+  tiktokUrl: string;
+  instagramUrl: string;
+  telegramUrl: string;
+};
+
+export function getShopContact(): ShopContact {
+  return {
+    storeName: process.env.NEXT_PUBLIC_SHOP_NAME?.trim() || "Electronics Shop",
+    storeNameAm: process.env.NEXT_PUBLIC_SHOP_NAME_AM?.trim() || "",
+    address: (
+      process.env.NEXT_PUBLIC_SHOP_ADDRESS?.trim() ||
+      "Add your store address in .env (NEXT_PUBLIC_SHOP_ADDRESS)"
+    ).replace(/\\n/g, "\n"),
+    addressAm: (process.env.NEXT_PUBLIC_SHOP_ADDRESS_AM?.trim() || "").replace(/\\n/g, "\n"),
+    phone: process.env.NEXT_PUBLIC_SHOP_PHONE?.trim() || "",
+    tiktokUrl: process.env.NEXT_PUBLIC_SHOP_TIKTOK_URL?.trim() || "",
+    instagramUrl: process.env.NEXT_PUBLIC_SHOP_INSTAGRAM_URL?.trim() || "",
+    telegramUrl: process.env.NEXT_PUBLIC_SHOP_TELEGRAM_URL?.trim() || "",
+  };
+}
+
+export function phoneToTelHref(phone: string): string {
+  const digits = phone.replace(/[^\d+]/g, "");
+  return digits ? `tel:${digits}` : "#";
+}
+
+/** Pick EN or Amharic store name/address for the current locale. */
+export function localizedShopFields(
+  c: ShopContact,
+  locale: "en" | "am"
+): { storeName: string; address: string } {
+  if (locale === "am") {
+    return {
+      storeName: c.storeNameAm.trim() || c.storeName,
+      address: c.addressAm.trim() || c.address,
+    };
+  }
+  return {
+    storeName: c.storeName,
+    address: c.address,
+  };
+}

@@ -133,10 +133,10 @@ export function ProductGrid({
   );
 }
 
-type FeaturedProductsProps = { className?: string };
+type FeaturedProductsProps = { className?: string; variant?: "default" | "showcase" };
 
 /** Homepage strip: recent / featured catalog products. */
-export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
+export function FeaturedProducts({ className = "", variant = "default" }: FeaturedProductsProps) {
   const { t } = useShopLocale();
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,11 +175,17 @@ export function FeaturedProducts({ className = "" }: FeaturedProductsProps) {
   }
 
   return (
-    <div className={`grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 ${className}`}>
-      {products.map((p) => {
+    <div
+      className={
+        variant === "showcase"
+          ? `grid w-full grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 ${className}`
+          : `grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 ${className}`
+      }
+    >
+      {products.slice(0, variant === "showcase" ? 3 : 8).map((p) => {
         const imgs =
           p.imageUrls && p.imageUrls.length > 0 ? p.imageUrls : p.imageUrl ? [p.imageUrl] : [];
-        return <ProductCard key={p.id} product={p} images={imgs} />;
+        return <ProductCard key={p.id} product={p} images={imgs} variant={variant} />;
       })}
     </div>
   );

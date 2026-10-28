@@ -49,10 +49,27 @@ export default function ShopHomePage() {
 
       <HomeHeroBanner />
 
-      <main className="w-full flex-1 px-2 pb-10 pt-3 sm:px-3 lg:px-4">
-        <FirstSetupBanner variant="light" className="mb-4" />
+      <main className="w-full flex-1 pb-10">
+        <div className="w-full px-2 pt-3 sm:px-3">
+          <FirstSetupBanner variant="light" className="mb-4" />
+        </div>
 
-        <section className="mb-4">
+        <section className="relative w-full">
+          <div className="w-full bg-primary-700 px-3 pb-40 pt-10 text-center text-white sm:pb-44">
+            <h2 className="font-display text-4xl font-medium sm:text-5xl">{t("popularProducts")}</h2>
+            <p className="mx-auto mt-2 max-w-xl text-[15px] text-emerald-50">{t("collectionBlurb")}</p>
+          </div>
+          <div className="relative z-10 -mt-32 w-full px-2 sm:-mt-36 sm:px-3">
+            <FeaturedProducts variant="showcase" />
+            <div className="mt-6 text-center">
+              <Link href="/catalog" className="text-[15px] font-medium text-primary-700 hover:underline">
+                {t("viewAllProducts")}
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8 w-full px-2 sm:px-3">
           <h2 className="mb-3 px-1 text-[21px] font-bold text-[#0f1111]">{t("shopByCategory")}</h2>
           {loadingCats ? (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
@@ -101,16 +118,6 @@ export default function ShopHomePage() {
               })}
             </ul>
           )}
-        </section>
-
-        <section className="mb-6 bg-white p-3 shadow-[0_2px_5px_rgba(15,17,17,0.12)] sm:p-4">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b border-[#e7e7e7] pb-3">
-            <h2 className="text-[21px] font-bold text-[#0f1111]">{t("popularProducts")}</h2>
-            <Link href="/catalog" className="text-[14px] font-medium text-primary-700 hover:underline">
-              {t("viewAllProducts")}
-            </Link>
-          </div>
-          <FeaturedProducts />
         </section>
       </main>
     </div>

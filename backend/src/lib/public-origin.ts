@@ -2,7 +2,9 @@ import type { NextRequest } from "next/server";
 
 /** Base URL for links in emails (password reset, etc.). */
 export function getPublicOrigin(request: NextRequest): string {
-  const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  const fromEnv = (process.env.NEXT_PUBLIC_APP_URL || process.env.FRONTEND_ORIGIN)
+    ?.trim()
+    .replace(/\/$/, "");
   if (fromEnv) return fromEnv;
 
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host");

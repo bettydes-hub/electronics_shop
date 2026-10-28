@@ -2,44 +2,22 @@
   "name": "electronics-shop",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "staff:reset-password": "node prisma/reset-staff-password.js",
-    "staff:reset-to-setup": "node prisma/reset-to-first-setup.js",
-    "db:seed": "node prisma/seed.js"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
-  "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.37.0",
-    "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.5.1",
-    "framer-motion": "^12.38.0",
-    "jose": "^6.2.2",
-    "next": "14.2.18",
-    "nodemailer": "^8.0.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:backend": "npm run dev -w backend",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "db:push": "npm run db:push -w backend",
+    "db:studio": "npm run db:studio -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "staff:reset-password": "npm run staff:reset-password -w backend",
+    "staff:reset-to-setup": "npm run staff:reset-to-setup -w backend"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20",
-    "@types/nodemailer": "^7.0.11",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.18",
-    "prisma": "^5.22.0",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "concurrently": "^9.2.1"
   }
 }

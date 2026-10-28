@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Source_Sans_3, Noto_Sans_Ethiopic } from "next/font/google";
+import { Playfair_Display, Source_Sans_3, Noto_Sans_Ethiopic } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 
@@ -17,6 +17,14 @@ const notoEthiopic = Noto_Sans_Ethiopic({
   display: "swap",
 });
 
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-shop-display",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Electronics Shop",
   description: "Browse our electronics products",
@@ -31,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sourceSans.variable} ${notoEthiopic.variable}`}>
+    <html lang="en" className={`${sourceSans.variable} ${notoEthiopic.variable} ${playfair.variable}`}>
       <body className="min-h-screen bg-[#eaeded] font-shop text-[#0f1111] antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
